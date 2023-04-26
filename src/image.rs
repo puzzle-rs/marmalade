@@ -1,5 +1,5 @@
-use futures::channel::mpsc;
-use futures::StreamExt;
+use futures_channel::mpsc;
+use futures_util::StreamExt;
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlImageElement;

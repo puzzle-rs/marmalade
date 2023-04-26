@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use futures::channel::oneshot;
+use futures_channel::oneshot;
 use wasm_bindgen::{prelude::Closure, JsCast};
 
 pub async fn sleep(duration: Duration) {

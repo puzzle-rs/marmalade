@@ -4,6 +4,11 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-futures = "0.3.28"
+futures-channel = "0.3.28"
+futures-util = "0.3.28"
 wasm-bindgen = "0.2.84"
-web-sys = { version = "0.3.61", features = ["HtmlImageElement", "Window"] }
+web-sys = { version = "0.3.61", features = [
+    "HtmlImageElement",
+    "Window",
+    "console",
+] }
