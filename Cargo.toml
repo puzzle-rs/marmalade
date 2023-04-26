@@ -11,4 +11,5 @@ web-sys = { version = "0.3.61", features = [
     "HtmlImageElement",
     "Window",
     "console",
+    "KeyboardEvent",
 ] }

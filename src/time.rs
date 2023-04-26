@@ -6,10 +6,8 @@ use wasm_bindgen::{prelude::Closure, JsCast};
 pub async fn sleep(duration: Duration) {
     let (send, recv) = oneshot::channel();
 
-    let mut send = Some(send);
-
-    let callback = Closure::<dyn FnMut()>::new(move || {
-        send.take().unwrap().send(()).unwrap();
+    let callback = Closure::once(move || {
+        send.send(()).unwrap();
     });
 
     web_sys::window()

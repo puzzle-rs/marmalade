@@ -7,16 +7,16 @@ use web_sys::HtmlImageElement;
 pub async fn load(src: &str) -> Result<HtmlImageElement, ()> {
     let img = HtmlImageElement::new().unwrap();
 
-    let (mut send, mut recv) = mpsc::channel(1);
+    let (mut send, mut recv) = mpsc::channel(0);
 
     let mut send_clone = send.clone();
 
-    let load_closure = Closure::<dyn FnMut()>::new(move || {
+    let load_closure = Closure::once(move || {
         send_clone.try_send(true).unwrap();
     });
     img.set_onload(Some(load_closure.as_ref().unchecked_ref()));
 
-    let err_closure = Closure::<dyn FnMut()>::new(move || {
+    let err_closure = Closure::once(move || {
         send.try_send(false).unwrap();
     });
     img.set_onerror(Some(err_closure.as_ref().unchecked_ref()));
