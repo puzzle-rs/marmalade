@@ -1,5 +1,5 @@
 use wasm_bindgen::JsCast;
-use web_sys::{window, CanvasRenderingContext2d, HtmlCanvasElement};
+use web_sys::{window, CanvasRenderingContext2d, Document, HtmlCanvasElement};
 
 use super::{Color, Drawer};
 
@@ -10,12 +10,9 @@ pub struct Canvas {
 
 impl Canvas {
     #[must_use]
-    pub fn new(id: &str) -> Self {
-        let canvas = window()
-            .unwrap()
-            .document()
-            .unwrap()
-            .get_element_by_id(id)
+    pub fn new(document: &Document, canvas_id: &str) -> Self {
+        let canvas = document
+            .get_element_by_id(canvas_id)
             .unwrap()
             .dyn_into::<web_sys::HtmlCanvasElement>()
             .unwrap();
@@ -49,10 +46,14 @@ impl Drawer for Canvas {
     fn draw_rect(&self, x: f64, y: f64, w: f64, h: f64, color: &Color) {
         self.gc.set_fill_style(&color.to_css_color().into());
 
+        self.gc.set_global_alpha(color.a as f64 / 255.);
+
         self.gc.fill_rect(x, y, w, h);
     }
 
     fn draw_image(&self, x: f64, y: f64, w: f64, h: f64, img: &web_sys::HtmlImageElement) {
+        self.gc.set_global_alpha(1.);
+
         self.gc
             .draw_image_with_html_image_element_and_dw_and_dh(img, x, y, w, h)
             .unwrap();

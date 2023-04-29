@@ -1,5 +1,5 @@
 mod key;
-mod key_handler;
+mod keyboard;
 
 pub use key::Key;
-pub use key_handler::KeyHandler;
+pub use keyboard::Keyboard;

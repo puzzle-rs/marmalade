@@ -19,6 +19,6 @@ impl Color {
 
     #[must_use]
     pub fn to_css_color(&self) -> String {
-        format!("rgba({},{},{},{})", self.r, self.g, self.b, self.a)
+        format!("rgb({},{},{})", self.r, self.g, self.b)
     }
 }

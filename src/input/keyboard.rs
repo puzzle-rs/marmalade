@@ -1,23 +1,21 @@
 use std::{cell::RefCell, collections::HashSet, rc::Rc};
 
 use wasm_bindgen::{prelude::Closure, JsCast};
-use web_sys::{window, KeyboardEvent};
+use web_sys::{window, KeyboardEvent, Window};
 
 use super::key::Key;
 
-pub struct KeyHandler {
+pub struct Keyboard {
     keys_down: Rc<RefCell<HashSet<Key>>>,
     keys_pressed: Rc<RefCell<HashSet<Key>>>,
 
-    _key_down_closure: Closure<dyn FnMut(KeyboardEvent)>,
+    _key_down_closure: Closure<dyn FnMut(KeyboardEvent) -> bool>,
     _key_up_closure: Closure<dyn FnMut(KeyboardEvent)>,
 }
 
-impl KeyHandler {
+impl Keyboard {
     #[must_use]
-    pub fn new() -> Self {
-        let window = window().unwrap();
-
+    pub fn new(window: &Window) -> Self {
         let keys_down = Rc::new(RefCell::new(HashSet::new()));
         let keys_pressed = Rc::new(RefCell::new(HashSet::new()));
 
@@ -29,6 +27,8 @@ impl KeyHandler {
                 keys_down_clone.borrow_mut().insert(key.clone());
                 keys_pressed_clone.borrow_mut().insert(key);
             }
+
+            false
         });
 
         let keys_down_clone = keys_down.clone();
@@ -61,17 +61,11 @@ impl KeyHandler {
     }
 }
 
-impl Drop for KeyHandler {
+impl Drop for Keyboard {
     fn drop(&mut self) {
         let window = window().unwrap();
 
         window.set_onkeydown(None);
         window.set_onkeyup(None);
-    }
-}
-
-impl Default for KeyHandler {
-    fn default() -> Self {
-        Self::new()
     }
 }

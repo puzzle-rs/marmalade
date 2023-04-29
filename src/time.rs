@@ -3,20 +3,23 @@ use std::time::Duration;
 use futures_channel::oneshot;
 use wasm_bindgen::{prelude::Closure, JsCast};
 
-pub async fn sleep(duration: Duration) {
-    let (send, recv) = oneshot::channel();
+use crate::marmalade_context::MarmaladeContext;
 
-    let callback = Closure::once(move || {
-        send.send(()).unwrap();
-    });
+impl MarmaladeContext {
+    pub async fn sleep(&self, duration: Duration) {
+        let (send, recv) = oneshot::channel();
 
-    web_sys::window()
-        .unwrap()
-        .set_timeout_with_callback_and_timeout_and_arguments_0(
-            callback.as_ref().unchecked_ref(),
-            duration.as_millis() as i32,
-        )
-        .unwrap();
+        let callback = Closure::once(move || {
+            send.send(()).unwrap();
+        });
 
-    recv.await.unwrap();
+        self.window
+            .set_timeout_with_callback_and_timeout_and_arguments_0(
+                callback.as_ref().unchecked_ref(),
+                duration.as_millis() as i32,
+            )
+            .unwrap();
+
+        recv.await.unwrap();
+    }
 }

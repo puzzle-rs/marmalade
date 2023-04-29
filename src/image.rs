@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose, Engine};
 use futures_channel::mpsc;
 use futures_util::StreamExt;
 use wasm_bindgen::prelude::Closure;
@@ -28,4 +29,37 @@ pub async fn load(src: &str) -> Result<HtmlImageElement, ()> {
     } else {
         Err(())
     }
+}
+
+pub enum Format {
+    Apng,
+    Avif,
+    Gif,
+    Jpeg,
+    Png,
+    Svg,
+    WebP,
+}
+
+impl Format {
+    #[must_use]
+    pub const fn get_mime(&self) -> &str {
+        match self {
+            Self::Apng => "image/apng",
+            Self::Avif => "image/avif",
+            Self::Gif => "image/gif",
+            Self::Jpeg => "image/jpeg",
+            Self::Png => "image/png",
+            Self::Svg => "image/svg+xml",
+            Self::WebP => "image/webp",
+        }
+    }
+}
+
+pub async fn from_bytes(bytes: &[u8], format: &Format) -> Result<HtmlImageElement, ()> {
+    let mut img = format!("data:{};base64,", format.get_mime());
+
+    general_purpose::STANDARD.encode_string(bytes, &mut img);
+
+    load(&img).await
 }
