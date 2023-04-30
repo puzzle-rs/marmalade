@@ -2,6 +2,13 @@
 name = "marmalade"
 version = "0.0.1"
 edition = "2021"
+description = "A simple UI library for video games"
+license = "LGPL-3.0-or-later"
+repository = "https://github.com/puzzle-rs/marmalade"
+homepage = "https://github.com/puzzle-rs/marmalade"
+readme = "README.md"
+categories = ["game-development", "graphics", "gui"]
+keywords = ["gamedev", "web"]
 
 [dependencies]
 base64 = "0.21.0"

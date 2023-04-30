@@ -1,5 +1,13 @@
 use web_sys::console;
 
-pub fn log(value: &str) {
-    console::log_1(&value.into());
+pub fn log(msg: &str) {
+    console::log_1(&msg.into());
+}
+
+pub fn warn(msg: &str) {
+    console::warn_1(&msg.into());
+}
+
+pub fn error(msg: &str) {
+    console::error_1(&msg.into());
 }
