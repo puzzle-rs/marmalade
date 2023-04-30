@@ -1,3 +1,4 @@
+use glam::DVec2;
 use wasm_bindgen::JsCast;
 use web_sys::{window, CanvasRenderingContext2d, Document, HtmlCanvasElement};
 
@@ -38,24 +39,24 @@ impl Canvas {
 
         self.gc.set_image_smoothing_enabled(false);
 
-        self.draw_rect(0., 0., width, height, clear_color);
+        self.draw_rect(DVec2::ZERO, DVec2::new(width, height), clear_color);
     }
 }
 
 impl Drawer for Canvas {
-    fn draw_rect(&self, x: f64, y: f64, w: f64, h: f64, color: &Color) {
+    fn draw_rect(&self, pos: DVec2, size: DVec2, color: &Color) {
         self.gc.set_fill_style(&color.to_css_color().into());
 
         self.gc.set_global_alpha(color.a as f64 / 255.);
 
-        self.gc.fill_rect(x, y, w, h);
+        self.gc.fill_rect(pos.x, pos.y, size.x, size.y);
     }
 
-    fn draw_image(&self, x: f64, y: f64, w: f64, h: f64, img: &web_sys::HtmlImageElement) {
+    fn draw_image(&self, pos: DVec2, size: DVec2, img: &web_sys::HtmlImageElement) {
         self.gc.set_global_alpha(1.);
 
         self.gc
-            .draw_image_with_html_image_element_and_dw_and_dh(img, x, y, w, h)
+            .draw_image_with_html_image_element_and_dw_and_dh(img, pos.x, pos.y, size.x, size.y)
             .unwrap();
     }
 }

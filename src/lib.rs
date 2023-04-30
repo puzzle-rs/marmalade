@@ -13,3 +13,7 @@ pub mod input;
 pub mod marmalade_context;
 pub mod render;
 pub mod time;
+
+pub extern crate console_error_panic_hook;
+pub extern crate glam;
+pub extern crate wasm_bindgen_futures;

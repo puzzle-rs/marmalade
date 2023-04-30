@@ -12,15 +12,21 @@ pub async fn load(src: &str) -> Result<HtmlImageElement, ()> {
 
     let mut send_clone = send.clone();
 
-    let load_closure = Closure::once(move || {
-        send_clone.try_send(true).unwrap();
-    });
-    img.set_onload(Some(load_closure.as_ref().unchecked_ref()));
+    img.set_onload(Some(
+        Closure::once(move || {
+            send_clone.try_send(true).unwrap();
+        })
+        .into_js_value()
+        .unchecked_ref(),
+    ));
 
-    let err_closure = Closure::once(move || {
-        send.try_send(false).unwrap();
-    });
-    img.set_onerror(Some(err_closure.as_ref().unchecked_ref()));
+    img.set_onerror(Some(
+        Closure::once(move || {
+            send.try_send(false).unwrap();
+        })
+        .into_js_value()
+        .unchecked_ref(),
+    ));
 
     img.set_src(src);
 

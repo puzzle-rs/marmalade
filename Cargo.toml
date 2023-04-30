@@ -12,14 +12,21 @@ keywords = ["gamedev", "web"]
 
 [dependencies]
 base64 = "0.21.0"
+console_error_panic_hook = "0.1.7"
 futures-channel = "0.3.28"
 futures-util = "0.3.28"
+glam = "0.24.0"
 wasm-bindgen = "0.2.84"
+wasm-bindgen-futures = "0.4.34"
 web-sys = { version = "0.3.61", features = [
     "HtmlImageElement",
     "Window",
     "console",
     "KeyboardEvent",
+    "MouseEvent",
+    "WheelEvent",
+    "EventTarget",
+    "AddEventListenerOptions",
     "HtmlCanvasElement",
     "CanvasRenderingContext2d",
     "Document",
