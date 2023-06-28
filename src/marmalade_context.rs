@@ -1,4 +1,7 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::{OnceCell, RefCell},
+    rc::Rc,
+};
 
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
 use web_sys::{window, Document, Window};
@@ -29,34 +32,34 @@ impl MarmaladeContext {
 
         let draw_closure: Rc<RefCell<Box<dyn FnMut()>>> = Rc::new(RefCell::new(Box::new(|| {})));
 
-        let request_animation_frame_closure = Rc::new(RefCell::<Option<JsValue>>::new(None));
+        let request_animation_frame_closure = Rc::new(OnceCell::<JsValue>::new());
 
         let request_animation_frame_closure_clone = request_animation_frame_closure.clone();
         let draw_closure_clone = draw_closure.clone();
 
         let window_clone = window.clone();
-        *request_animation_frame_closure.borrow_mut() = Some(
-            Closure::<dyn FnMut()>::new(move || {
-                (draw_closure_clone.borrow_mut())();
+        request_animation_frame_closure
+            .set(
+                Closure::<dyn FnMut()>::new(move || {
+                    (draw_closure_clone.borrow_mut())();
 
-                window_clone
-                    .request_animation_frame(
-                        request_animation_frame_closure_clone
-                            .borrow()
-                            .as_ref()
-                            .unwrap()
-                            .unchecked_ref(),
-                    )
-                    .unwrap();
-            })
-            .into_js_value(),
-        );
+                    window_clone
+                        .request_animation_frame(
+                            request_animation_frame_closure_clone
+                                .get()
+                                .unwrap()
+                                .unchecked_ref(),
+                        )
+                        .unwrap();
+                })
+                .into_js_value(),
+            )
+            .unwrap();
 
         window
             .request_animation_frame(
                 request_animation_frame_closure
-                    .borrow()
-                    .as_ref()
+                    .get()
                     .unwrap()
                     .unchecked_ref(),
             )
@@ -74,5 +77,9 @@ impl MarmaladeContext {
 
     pub fn set_on_draw<T: FnMut() + 'static>(&mut self, closure: T) {
         *self.draw_closure.borrow_mut() = Box::new(closure);
+    }
+
+    pub fn clear_on_draw(&mut self) {
+        self.set_on_draw(|| {});
     }
 }
