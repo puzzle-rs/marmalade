@@ -94,6 +94,11 @@ impl WebSocket {
         self.open.get()
     }
 
+    pub fn close(&self) {
+        self.ws.close().unwrap();
+        self.open.set(false);
+    }
+
     pub fn read(&self) -> Result<Option<Message>, WebSocketError> {
         if let Some(msg) = self.recv.borrow_mut().pop_front() {
             Ok(Some(msg))

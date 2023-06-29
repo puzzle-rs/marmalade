@@ -11,9 +11,9 @@
 )]
 
 pub mod console;
+pub mod draw_scheduler;
 pub mod image;
 pub mod input;
-pub mod marmalade_context;
 pub mod net;
 pub mod render;
 pub mod time;

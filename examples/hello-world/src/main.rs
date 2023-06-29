@@ -1,17 +1,12 @@
+use marmalade::draw_scheduler::DrawScheduler;
 use marmalade::glam::DVec2;
-use marmalade::input::Key;
-use marmalade::marmalade_context::MarmaladeContext;
-use marmalade::render::{Color, Drawer};
+use marmalade::input::{Key, Keyboard};
+use marmalade::render::{Canvas, Color, Drawer};
 use marmalade::wasm_bindgen_futures::spawn_local;
 use marmalade::{console_error_panic_hook, image};
-use std::cell::RefCell;
-use std::rc::Rc;
 
 async fn async_main() {
-    // Create a marmalade context, this will then be used for operations like drawing or reading keyboard
-    let mc = Rc::new(RefCell::new(MarmaladeContext::new("canvas")));
-
-    // Load an image to use it as a sprite
+    // Load an image for later drawing it
     let image = image::from_bytes(
         include_bytes!("../../../resources/logo.png"),
         &image::Format::Png,
@@ -19,39 +14,42 @@ async fn async_main() {
     .await
     .unwrap();
 
-    // Create the variables that will be sent to the following closure
-    let mc_clone = mc.clone();
     let mut position = DVec2::new(0., 0.);
     let size = DVec2::new(100., 100.);
 
-    // set_on_draw is used to define a closure that will be called for every frame
-    mc.borrow_mut().set_on_draw(move || {
-        // Retrieve the MarmaladeContext for local usage
-        let mc = mc_clone.borrow();
+    // Create a keyboard for reading user inputs
+    let keyboard = Keyboard::new();
 
+    // Create a canvas for drawing the "game"
+    let canvas = Canvas::new("canvas");
+
+    // Create a scheduler for calling a Closure on every new frame
+    let draw_scheduler = DrawScheduler::new();
+
+    // Closure called for every frame
+    draw_scheduler.set_on_draw(move || {
         // Move the sprite with keyboard
-        if mc.keyboard.is_down(&Key::A) {
+        if keyboard.is_down(&Key::A) {
             position.x -= 4.;
         }
-        if mc.keyboard.is_down(&Key::D) {
+        if keyboard.is_down(&Key::D) {
             position.x += 4.;
         }
-        if mc.keyboard.is_down(&Key::W) {
+        if keyboard.is_down(&Key::W) {
             position.y -= 4.;
         }
-        if mc.keyboard.is_down(&Key::S) {
+        if keyboard.is_down(&Key::S) {
             position.y += 4.;
         }
 
         // Clear canvas to black
-        mc.canvas.clear(&Color::rgb(0, 0, 0));
+        canvas.clear(&Color::rgb(0, 0, 0));
 
         // Draw the 100px by 100px sprite at coordinates x, y
-        mc.canvas.draw_image(position, size, &image);
+        canvas.draw_image(position, size, &image);
 
         // Draw a transparent rectangle on top of the sprite to give it a red tint
-        mc.canvas
-            .draw_rect(position, size, &Color::rgba(127, 0, 0, 127));
+        canvas.draw_rect(position, size, &Color::rgba(127, 0, 0, 127));
     });
 }
 
