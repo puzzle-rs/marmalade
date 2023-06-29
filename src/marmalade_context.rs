@@ -4,7 +4,7 @@ use std::{
 };
 
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
-use web_sys::{window, Document, Window};
+use web_sys::window;
 
 use crate::{
     input::{Keyboard, Mouse},
@@ -12,8 +12,6 @@ use crate::{
 };
 
 pub struct MarmaladeContext {
-    pub window: Rc<Window>,
-    pub document: Document,
     pub canvas: Canvas,
     pub keyboard: Keyboard,
     pub mouse: Mouse,
@@ -24,11 +22,10 @@ pub struct MarmaladeContext {
 impl MarmaladeContext {
     #[must_use]
     pub fn new(canvas_id: &str) -> Self {
-        let window = Rc::new(window().unwrap());
-        let document = window.document().unwrap();
-        let canvas = Canvas::new(&document, canvas_id);
-        let keyboard = Keyboard::new(&window);
-        let mouse = Mouse::new(&window);
+        let window = window().unwrap();
+        let canvas = Canvas::new(canvas_id);
+        let keyboard = Keyboard::new();
+        let mouse = Mouse::new();
 
         let draw_closure: Rc<RefCell<Box<dyn FnMut()>>> = Rc::new(RefCell::new(Box::new(|| {})));
 
@@ -66,8 +63,6 @@ impl MarmaladeContext {
             .unwrap();
 
         Self {
-            window,
-            document,
             canvas,
             keyboard,
             mouse,

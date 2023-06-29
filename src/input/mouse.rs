@@ -6,7 +6,7 @@ use std::{
 
 use glam::IVec2;
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
-use web_sys::{window, AddEventListenerOptions, MouseEvent, WheelEvent, Window};
+use web_sys::{window, AddEventListenerOptions, MouseEvent, WheelEvent};
 
 use super::Button;
 
@@ -21,7 +21,9 @@ pub struct Mouse {
 
 impl Mouse {
     #[must_use]
-    pub fn new(window: &Window) -> Self {
+    pub fn new() -> Self {
+        let window = window().unwrap();
+
         let buttons_down = Rc::new(RefCell::new(HashSet::new()));
         let buttons_pressed = Rc::new(RefCell::new(HashSet::new()));
         let wheel_move = Rc::new(Cell::new(0.));

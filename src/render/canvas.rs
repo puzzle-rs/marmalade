@@ -1,6 +1,6 @@
 use glam::DVec2;
 use wasm_bindgen::JsCast;
-use web_sys::{window, CanvasRenderingContext2d, Document, HtmlCanvasElement};
+use web_sys::{window, CanvasRenderingContext2d, HtmlCanvasElement};
 
 use super::{Color, Drawer};
 
@@ -11,8 +11,11 @@ pub struct Canvas {
 
 impl Canvas {
     #[must_use]
-    pub fn new(document: &Document, canvas_id: &str) -> Self {
-        let canvas = document
+    pub fn new(canvas_id: &str) -> Self {
+        let canvas = window()
+            .unwrap()
+            .document()
+            .unwrap()
             .get_element_by_id(canvas_id)
             .unwrap()
             .dyn_into::<web_sys::HtmlCanvasElement>()

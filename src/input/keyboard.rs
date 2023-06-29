@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashSet, rc::Rc};
 
 use wasm_bindgen::{prelude::Closure, JsCast};
-use web_sys::{window, KeyboardEvent, Window};
+use web_sys::{window, KeyboardEvent};
 
 use super::key::Key;
 
@@ -12,7 +12,9 @@ pub struct Keyboard {
 
 impl Keyboard {
     #[must_use]
-    pub fn new(window: &Window) -> Self {
+    pub fn new() -> Self {
+        let window = window().unwrap();
+
         let keys_down = Rc::new(RefCell::new(HashSet::new()));
         let keys_pressed = Rc::new(RefCell::new(HashSet::new()));
 
