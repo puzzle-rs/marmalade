@@ -2,7 +2,7 @@ use glam::DVec2;
 use wasm_bindgen::JsCast;
 use web_sys::{window, CanvasRenderingContext2d, HtmlCanvasElement};
 
-use super::{Color, Drawer};
+use super::Color;
 
 pub struct Canvas {
     canvas: HtmlCanvasElement,
@@ -44,10 +44,8 @@ impl Canvas {
 
         self.draw_rect(DVec2::ZERO, DVec2::new(width, height), clear_color);
     }
-}
 
-impl Drawer for Canvas {
-    fn draw_rect(&self, pos: DVec2, size: DVec2, color: &Color) {
+    pub fn draw_rect(&self, pos: DVec2, size: DVec2, color: &Color) {
         self.gc.set_fill_style(&color.to_css_color().into());
 
         self.gc.set_global_alpha(color.a as f64 / 255.);
@@ -55,7 +53,7 @@ impl Drawer for Canvas {
         self.gc.fill_rect(pos.x, pos.y, size.x, size.y);
     }
 
-    fn draw_image(&self, pos: DVec2, size: DVec2, img: &web_sys::HtmlImageElement) {
+    pub fn draw_image(&self, pos: DVec2, size: DVec2, img: &web_sys::HtmlImageElement) {
         self.gc.set_global_alpha(1.);
 
         self.gc

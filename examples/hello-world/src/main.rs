@@ -1,9 +1,8 @@
+use glam::DVec2;
 use marmalade::draw_scheduler::DrawScheduler;
-use marmalade::glam::DVec2;
+use marmalade::image;
 use marmalade::input::{Key, Keyboard};
-use marmalade::render::{Canvas, Color, Drawer};
-use marmalade::wasm_bindgen_futures::spawn_local;
-use marmalade::{console_error_panic_hook, image};
+use marmalade::render::{Canvas, Color};
 
 async fn async_main() {
     // Load an image for later drawing it
@@ -58,5 +57,5 @@ fn main() {
     console_error_panic_hook::set_once();
 
     // Start the async_main function, some marmalade functionalities require an async context
-    spawn_local(async_main());
+    wasm_bindgen_futures::spawn_local(async_main());
 }
