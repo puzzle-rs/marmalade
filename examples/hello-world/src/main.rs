@@ -41,6 +41,9 @@ async fn async_main() {
             position.y += 4.;
         }
 
+        // Set size of the canvas to the same as screen
+        canvas.fit_screen();
+
         // Clear canvas to black
         canvas.clear(&Color::rgb(0, 0, 0));
 

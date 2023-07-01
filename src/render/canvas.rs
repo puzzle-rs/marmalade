@@ -1,12 +1,12 @@
-use glam::DVec2;
+use glam::{DVec2, UVec2};
 use wasm_bindgen::JsCast;
-use web_sys::{window, CanvasRenderingContext2d, HtmlCanvasElement};
+use web_sys::{window, HtmlCanvasElement, OffscreenCanvas, OffscreenCanvasRenderingContext2d};
 
 use super::Color;
 
 pub struct Canvas {
-    canvas: HtmlCanvasElement,
-    gc: CanvasRenderingContext2d,
+    canvas: OffscreenCanvas,
+    gc: OffscreenCanvasRenderingContext2d,
 }
 
 impl Canvas {
@@ -18,14 +18,29 @@ impl Canvas {
             .unwrap()
             .get_element_by_id(canvas_id)
             .unwrap()
-            .dyn_into::<web_sys::HtmlCanvasElement>()
+            .dyn_into::<HtmlCanvasElement>()
+            .unwrap()
+            .transfer_control_to_offscreen()
             .unwrap();
 
         let gc = canvas
             .get_context("2d")
             .unwrap()
             .unwrap()
-            .dyn_into::<web_sys::CanvasRenderingContext2d>()
+            .dyn_into::<OffscreenCanvasRenderingContext2d>()
+            .unwrap();
+
+        Self { canvas, gc }
+    }
+
+    pub fn new_offscreen(size: UVec2) -> Self {
+        let canvas = OffscreenCanvas::new(size.x, size.y).unwrap();
+
+        let gc = canvas
+            .get_context("2d")
+            .unwrap()
+            .unwrap()
+            .dyn_into::<OffscreenCanvasRenderingContext2d>()
             .unwrap();
 
         Self { canvas, gc }
@@ -43,6 +58,20 @@ impl Canvas {
         self.gc.set_image_smoothing_enabled(false);
 
         self.draw_rect(DVec2::ZERO, DVec2::new(width, height), clear_color);
+    }
+
+    pub fn set_size(&self, size: UVec2) {
+        self.canvas.set_width(size.x);
+        self.canvas.set_height(size.y);
+    }
+
+    pub fn fit_screen(&self) {
+        let window = window().unwrap();
+
+        self.set_size(UVec2::new(
+            window.inner_width().unwrap().as_f64().unwrap() as u32,
+            window.inner_height().unwrap().as_f64().unwrap() as u32,
+        ));
     }
 
     pub fn draw_rect(&self, pos: DVec2, size: DVec2, color: &Color) {

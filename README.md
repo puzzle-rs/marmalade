@@ -1,8 +1,8 @@
 # Marmalade
 ![](resources/banner.png)
 
-Marmalade is a simple UI library for video games.
+Marmalade is a small toolkit for making video games for the web.
 
-It is best used for game jams and small games.
+The only target is the web for simplicity and portability.
 
-We only target the web for simplicity and portability
+We try to stay simple without hiding complexity
