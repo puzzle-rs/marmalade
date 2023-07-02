@@ -2,7 +2,7 @@
 name = "marmalade"
 version = "0.0.1"
 edition = "2021"
-description = "A simple UI library for video games"
+description = "A small toolkit for video games on the web"
 license = "MPL-2.0"
 repository = "https://github.com/puzzle-rs/marmalade"
 homepage = "https://github.com/puzzle-rs/marmalade"
@@ -33,4 +33,5 @@ web-sys = { version = "0.3.64", features = [
     "Document",
     "BinaryType",
     "OffscreenCanvas",
+    "Performance",
 ] }

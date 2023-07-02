@@ -6,7 +6,9 @@ use std::{
 
 use glam::IVec2;
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
-use web_sys::{window, AddEventListenerOptions, MouseEvent, WheelEvent};
+use web_sys::{AddEventListenerOptions, MouseEvent, WheelEvent};
+
+use crate::global::window;
 
 use super::Button;
 
@@ -22,7 +24,7 @@ pub struct Mouse {
 impl Mouse {
     #[must_use]
     pub fn new() -> Self {
-        let window = window().unwrap();
+        let window = window();
 
         let buttons_down = Rc::new(RefCell::new(HashSet::new()));
         let buttons_pressed = Rc::new(RefCell::new(HashSet::new()));
@@ -119,7 +121,7 @@ impl Mouse {
 
 impl Drop for Mouse {
     fn drop(&mut self) {
-        let window = window().unwrap();
+        let window = window();
 
         window.set_onmousedown(None);
         window.set_onmouseup(None);

@@ -4,7 +4,8 @@ use std::{
 };
 
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
-use web_sys::window;
+
+use crate::global::window;
 
 pub struct DrawScheduler {
     draw_closure: Rc<RefCell<Box<dyn FnMut()>>>,
@@ -26,7 +27,6 @@ impl DrawScheduler {
                     (draw_closure_clone.borrow_mut())();
 
                     window()
-                        .unwrap()
                         .request_animation_frame(
                             request_animation_frame_closure_clone
                                 .get()
@@ -40,7 +40,6 @@ impl DrawScheduler {
             .unwrap();
 
         window()
-            .unwrap()
             .request_animation_frame(
                 request_animation_frame_closure
                     .get()

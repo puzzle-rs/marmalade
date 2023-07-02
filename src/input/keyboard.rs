@@ -1,7 +1,9 @@
 use std::{cell::RefCell, collections::HashSet, rc::Rc};
 
 use wasm_bindgen::{prelude::Closure, JsCast};
-use web_sys::{window, KeyboardEvent};
+use web_sys::KeyboardEvent;
+
+use crate::global::window;
 
 use super::key::Key;
 
@@ -13,7 +15,7 @@ pub struct Keyboard {
 impl Keyboard {
     #[must_use]
     pub fn new() -> Self {
-        let window = window().unwrap();
+        let window = window();
 
         let keys_down = Rc::new(RefCell::new(HashSet::new()));
         let keys_pressed = Rc::new(RefCell::new(HashSet::new()));
@@ -65,7 +67,7 @@ impl Keyboard {
 
 impl Drop for Keyboard {
     fn drop(&mut self) {
-        let window = window().unwrap();
+        let window = window();
 
         window.set_onkeydown(None);
         window.set_onkeyup(None);

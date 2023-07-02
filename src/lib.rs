@@ -7,13 +7,16 @@
     clippy::cast_lossless,
     clippy::new_without_default,
     clippy::option_if_let_else,
-    clippy::module_name_repetitions
+    clippy::module_name_repetitions,
+    clippy::cast_precision_loss
 )]
 
 pub mod console;
 pub mod draw_scheduler;
+pub mod global;
 pub mod image;
 pub mod input;
 pub mod net;
 pub mod render;
+pub mod tick_scheduler;
 pub mod time;

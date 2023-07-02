@@ -1,4 +1,4 @@
-use glam::DVec2;
+use glam::Vec2;
 use marmalade::draw_scheduler::DrawScheduler;
 use marmalade::image;
 use marmalade::input::{Key, Keyboard};
@@ -13,8 +13,8 @@ async fn async_main() {
     .await
     .unwrap();
 
-    let mut position = DVec2::new(0., 0.);
-    let size = DVec2::new(100., 100.);
+    let mut position = Vec2::new(0., 0.);
+    let size = Vec2::new(100., 100.);
 
     // Create a keyboard for reading user inputs
     let keyboard = Keyboard::new();

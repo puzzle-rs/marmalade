@@ -1,6 +1,10 @@
-use glam::{DVec2, UVec2};
+use std::f64::consts::TAU;
+
+use glam::{UVec2, Vec2};
 use wasm_bindgen::JsCast;
-use web_sys::{window, HtmlCanvasElement, OffscreenCanvas, OffscreenCanvasRenderingContext2d};
+use web_sys::{HtmlCanvasElement, OffscreenCanvas, OffscreenCanvasRenderingContext2d};
+
+use crate::global::{document, window};
 
 use super::Color;
 
@@ -12,10 +16,7 @@ pub struct Canvas {
 impl Canvas {
     #[must_use]
     pub fn new(canvas_id: &str) -> Self {
-        let canvas = window()
-            .unwrap()
-            .document()
-            .unwrap()
+        let canvas = document()
             .get_element_by_id(canvas_id)
             .unwrap()
             .dyn_into::<HtmlCanvasElement>()
@@ -33,6 +34,7 @@ impl Canvas {
         Self { canvas, gc }
     }
 
+    #[must_use]
     pub fn new_offscreen(size: UVec2) -> Self {
         let canvas = OffscreenCanvas::new(size.x, size.y).unwrap();
 
@@ -47,26 +49,29 @@ impl Canvas {
     }
 
     pub fn clear(&self, clear_color: &Color) {
-        let window = window().unwrap();
+        let window = window();
 
         let width = window.inner_width().unwrap().as_f64().unwrap();
         let height = window.inner_height().unwrap().as_f64().unwrap();
 
-        self.canvas.set_width(width as u32);
-        self.canvas.set_height(height as u32);
-
         self.gc.set_image_smoothing_enabled(false);
 
-        self.draw_rect(DVec2::ZERO, DVec2::new(width, height), clear_color);
+        self.draw_rect(
+            Vec2::ZERO,
+            Vec2::new(width as f32, height as f32),
+            clear_color,
+        );
     }
 
     pub fn set_size(&self, size: UVec2) {
-        self.canvas.set_width(size.x);
-        self.canvas.set_height(size.y);
+        if size.x != self.canvas.width() || size.y != self.canvas.height() {
+            self.canvas.set_width(size.x);
+            self.canvas.set_height(size.y);
+        }
     }
 
     pub fn fit_screen(&self) {
-        let window = window().unwrap();
+        let window = window();
 
         self.set_size(UVec2::new(
             window.inner_width().unwrap().as_f64().unwrap() as u32,
@@ -74,19 +79,49 @@ impl Canvas {
         ));
     }
 
-    pub fn draw_rect(&self, pos: DVec2, size: DVec2, color: &Color) {
+    fn set_color(&self, color: &Color) {
         self.gc.set_fill_style(&color.to_css_color().into());
 
         self.gc.set_global_alpha(color.a as f64 / 255.);
-
-        self.gc.fill_rect(pos.x, pos.y, size.x, size.y);
     }
 
-    pub fn draw_image(&self, pos: DVec2, size: DVec2, img: &web_sys::HtmlImageElement) {
+    pub fn draw_rect(&self, pos: Vec2, size: Vec2, color: &Color) {
+        self.set_color(color);
+        self.gc
+            .fill_rect(pos.x as f64, pos.y as f64, size.x as f64, size.y as f64);
+    }
+
+    pub fn draw_disk(&self, center: Vec2, radius: f32, color: &Color) {
+        self.set_color(color);
+
+        self.gc.begin_path();
+
+        self.gc
+            .arc(center.x as f64, center.y as f64, radius as f64, 0., TAU)
+            .unwrap();
+
+        self.gc.fill();
+    }
+
+    pub fn draw_image(&self, pos: Vec2, size: Vec2, img: &web_sys::HtmlImageElement) {
         self.gc.set_global_alpha(1.);
 
         self.gc
-            .draw_image_with_html_image_element_and_dw_and_dh(img, pos.x, pos.y, size.x, size.y)
+            .draw_image_with_html_image_element_and_dw_and_dh(
+                img,
+                pos.x as f64,
+                pos.y as f64,
+                size.x as f64,
+                size.y as f64,
+            )
             .unwrap();
+    }
+
+    pub fn draw_text(&self, text: &str, pos: Vec2, height: f32, color: &Color) {
+        self.set_color(color);
+
+        self.gc.set_font(&format!("{height}px sans-serif"));
+
+        self.gc.fill_text(text, pos.x as f64, pos.y as f64).unwrap();
     }
 }
