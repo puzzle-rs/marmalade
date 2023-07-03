@@ -2,9 +2,10 @@ use std::cell::RefCell;
 use std::time::Duration;
 
 use glam::Vec2;
-use marmalade::draw_scheduler::DrawScheduler;
+use marmalade::dom_stack;
+use marmalade::draw_scheduler;
 use marmalade::global::window;
-use marmalade::input::{Key, Keyboard};
+use marmalade::input::{keyboard, Key};
 use marmalade::render::{Canvas, Color};
 use marmalade::tick_scheduler::TickScheduler;
 
@@ -70,24 +71,22 @@ impl Ball {
 }
 
 async fn async_main() {
+    dom_stack::set_title("Bouncing Balls");
+
     let mut balls = Vec::new();
 
-    // Create a keyboard for reading user inputs
-    let keyboard = Keyboard::new();
+    let html_canvas = dom_stack::create_full_screen_canvas();
 
-    // Create a canvas for drawing the "game"
-    let canvas = Canvas::new("canvas");
+    dom_stack::stack_node(&html_canvas);
+
+    let canvas = Canvas::new(&html_canvas);
 
     let mut tick_scheduler = TickScheduler::new(Duration::from_millis(1));
 
-    // Create a scheduler for calling a Closure on every new frame
-    let draw_scheduler = DrawScheduler::new();
-
     let mut write_instructions = true;
 
-    // Closure called for every frame
-    draw_scheduler.set_on_draw(move || {
-        if keyboard.is_pressed(&Key::Space) {
+    draw_scheduler::set_on_draw(move || {
+        if keyboard::is_pressed(Key::Space) {
             balls.push(RefCell::new(Ball::new(
                 Vec2::new(30., 30.),
                 Vec2::new(1., 0.),
@@ -109,10 +108,8 @@ async fn async_main() {
             }
         }
 
-        // Set size of the canvas to the same as screen
         canvas.fit_screen();
 
-        // Clear canvas to black, but with a transparent color to have a trail effect
         canvas.clear(&Color::rgba(0, 0, 0, 63));
 
         for ball in &balls {
@@ -132,9 +129,7 @@ async fn async_main() {
 }
 
 fn main() {
-    // Redirect rust panics to the console for easier debugging
     console_error_panic_hook::set_once();
 
-    // Start the async_main function, some marmalade functionalities require an async context
     wasm_bindgen_futures::spawn_local(async_main());
 }

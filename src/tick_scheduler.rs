@@ -24,7 +24,14 @@ impl TickScheduler {
     }
 
     pub fn tick_count(&mut self) -> u32 {
-        let interval = current_time() - self.last_tick;
+        let current = current_time();
+        let interval = current - self.last_tick;
+
+        // Limit interval to one second to prevent freeze when going back to dormant tab
+        if interval > 1000. {
+            self.last_tick = current;
+            return 0;
+        }
 
         let count = (interval / self.interval) as u32;
 

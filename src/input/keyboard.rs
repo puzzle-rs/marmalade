@@ -7,14 +7,14 @@ use crate::global::window;
 
 use super::key::Key;
 
-pub struct Keyboard {
+struct Keyboard {
     keys_down: Rc<RefCell<HashSet<Key>>>,
     keys_pressed: Rc<RefCell<HashSet<Key>>>,
 }
 
 impl Keyboard {
     #[must_use]
-    pub fn new() -> Self {
+    fn new() -> Self {
         let window = window();
 
         let keys_down = Rc::new(RefCell::new(HashSet::new()));
@@ -26,7 +26,7 @@ impl Keyboard {
         window.set_onkeydown(Some(
             Closure::<dyn Fn(KeyboardEvent) -> bool>::new(move |event: KeyboardEvent| {
                 if let Some(key) = Key::from_code(event.code().as_str()) {
-                    keys_down_clone.borrow_mut().insert(key.clone());
+                    keys_down_clone.borrow_mut().insert(key);
                     keys_pressed_clone.borrow_mut().insert(key);
                 }
 
@@ -53,23 +53,18 @@ impl Keyboard {
             keys_pressed,
         }
     }
-
-    #[must_use]
-    pub fn is_down(&self, key: &Key) -> bool {
-        self.keys_down.borrow().contains(key)
-    }
-
-    #[must_use]
-    pub fn is_pressed(&self, key: &Key) -> bool {
-        self.keys_pressed.borrow_mut().remove(key)
-    }
 }
 
-impl Drop for Keyboard {
-    fn drop(&mut self) {
-        let window = window();
+thread_local! {
+    static KEYBOARD:Keyboard = Keyboard::new();
+}
 
-        window.set_onkeydown(None);
-        window.set_onkeyup(None);
-    }
+#[must_use]
+pub fn is_down(key: Key) -> bool {
+    KEYBOARD.with(|k| k.keys_down.borrow().contains(&key))
+}
+
+#[must_use]
+pub fn is_pressed(key: Key) -> bool {
+    KEYBOARD.with(|k| k.keys_pressed.borrow_mut().remove(&key))
 }

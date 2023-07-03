@@ -1,10 +1,13 @@
 use glam::Vec2;
-use marmalade::draw_scheduler::DrawScheduler;
+use marmalade::dom_stack;
+use marmalade::draw_scheduler;
 use marmalade::image;
-use marmalade::input::{Key, Keyboard};
+use marmalade::input::{keyboard, Key};
 use marmalade::render::{Canvas, Color};
 
 async fn async_main() {
+    dom_stack::set_title("Hello World");
+
     // Load an image for later drawing it
     let image = image::from_bytes(
         include_bytes!("../../../resources/logo.png"),
@@ -13,31 +16,31 @@ async fn async_main() {
     .await
     .unwrap();
 
+    // Create an HtmlCanvas where the game will be displayed
+    let html_canvas = dom_stack::create_full_screen_canvas();
+
+    // Add the Html canvas to the dom
+    dom_stack::stack_node(&html_canvas);
+
+    // Create a canvas for drawing the "game"
+    let canvas = Canvas::new(&html_canvas);
+
     let mut position = Vec2::new(0., 0.);
     let size = Vec2::new(100., 100.);
 
-    // Create a keyboard for reading user inputs
-    let keyboard = Keyboard::new();
-
-    // Create a canvas for drawing the "game"
-    let canvas = Canvas::new("canvas");
-
-    // Create a scheduler for calling a Closure on every new frame
-    let draw_scheduler = DrawScheduler::new();
-
     // Closure called for every frame
-    draw_scheduler.set_on_draw(move || {
+    draw_scheduler::set_on_draw(move || {
         // Move the sprite with keyboard
-        if keyboard.is_down(&Key::A) {
+        if keyboard::is_down(Key::A) {
             position.x -= 4.;
         }
-        if keyboard.is_down(&Key::D) {
+        if keyboard::is_down(Key::D) {
             position.x += 4.;
         }
-        if keyboard.is_down(&Key::W) {
+        if keyboard::is_down(Key::W) {
             position.y -= 4.;
         }
-        if keyboard.is_down(&Key::S) {
+        if keyboard::is_down(Key::S) {
             position.y += 4.;
         }
 

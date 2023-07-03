@@ -7,13 +7,13 @@ use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
 
 use crate::global::window;
 
-pub struct DrawScheduler {
+struct DrawScheduler {
     draw_closure: Rc<RefCell<Box<dyn FnMut()>>>,
 }
 
 impl DrawScheduler {
     #[must_use]
-    pub fn new() -> Self {
+    fn new() -> Self {
         let draw_closure: Rc<RefCell<Box<dyn FnMut()>>> = Rc::new(RefCell::new(Box::new(|| {})));
 
         let request_animation_frame_closure = Rc::new(OnceCell::<JsValue>::new());
@@ -50,12 +50,16 @@ impl DrawScheduler {
 
         Self { draw_closure }
     }
+}
 
-    pub fn set_on_draw<T: FnMut() + 'static>(&self, closure: T) {
-        *self.draw_closure.borrow_mut() = Box::new(closure);
-    }
+thread_local! {
+    static DRAW_SCHEDULER: DrawScheduler = DrawScheduler::new();
+}
 
-    pub fn clear_on_draw(&self) {
-        self.set_on_draw(|| {});
-    }
+pub fn set_on_draw<T: FnMut() + 'static>(closure: T) {
+    DRAW_SCHEDULER.with(|d| *d.draw_closure.borrow_mut() = Box::new(closure));
+}
+
+pub fn clear_on_draw() {
+    set_on_draw(|| {});
 }

@@ -12,6 +12,7 @@
 )]
 
 pub mod console;
+pub mod dom_stack;
 pub mod draw_scheduler;
 pub mod global;
 pub mod image;

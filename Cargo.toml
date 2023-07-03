@@ -34,4 +34,5 @@ web-sys = { version = "0.3.64", features = [
     "BinaryType",
     "OffscreenCanvas",
     "Performance",
+    "CssStyleDeclaration",
 ] }

@@ -5,25 +5,23 @@ use std::{
 };
 
 use glam::IVec2;
-use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
+use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::{AddEventListenerOptions, MouseEvent, WheelEvent};
 
 use crate::global::window;
 
 use super::Button;
 
-pub struct Mouse {
+struct Mouse {
     buttons_down: Rc<RefCell<HashSet<Button>>>,
     buttons_pressed: Rc<RefCell<HashSet<Button>>>,
     wheel_move: Rc<Cell<f64>>,
     mouse_pos: Rc<Cell<IVec2>>,
-
-    wheel_closure: JsValue,
 }
 
 impl Mouse {
     #[must_use]
-    pub fn new() -> Self {
+    fn new() -> Self {
         let window = window();
 
         let buttons_down = Rc::new(RefCell::new(HashSet::new()));
@@ -36,7 +34,7 @@ impl Mouse {
         window.set_onmousedown(Some(
             Closure::<dyn Fn(MouseEvent) -> bool>::new(move |event: MouseEvent| {
                 if let Some(button) = Button::from_code(event.button()) {
-                    buttons_down_clone.borrow_mut().insert(button.clone());
+                    buttons_down_clone.borrow_mut().insert(button);
                     buttons_pressed_clone.borrow_mut().insert(button);
                 }
 
@@ -64,18 +62,19 @@ impl Mouse {
         ));
 
         let wheel_move_clone = wheel_move.clone();
-        let wheel_closure = Closure::<dyn Fn(WheelEvent)>::new(move |event: WheelEvent| {
-            wheel_move_clone.set(event.delta_y());
-            event.prevent_default();
-        })
-        .into_js_value();
 
         let mut wheel_event_listener_options = AddEventListenerOptions::new();
         wheel_event_listener_options.passive(false);
+
         window
             .add_event_listener_with_callback_and_add_event_listener_options(
                 "wheel",
-                wheel_closure.unchecked_ref(),
+                Closure::<dyn Fn(WheelEvent)>::new(move |event: WheelEvent| {
+                    wheel_move_clone.set(event.delta_y());
+                    event.prevent_default();
+                })
+                .into_js_value()
+                .unchecked_ref(),
                 &wheel_event_listener_options,
             )
             .unwrap();
@@ -94,40 +93,30 @@ impl Mouse {
             buttons_pressed,
             wheel_move,
             mouse_pos,
-            wheel_closure,
         }
-    }
-
-    #[must_use]
-    pub fn is_down(&self, button: &Button) -> bool {
-        self.buttons_down.borrow().contains(button)
-    }
-
-    #[must_use]
-    pub fn is_pressed(&self, button: &Button) -> bool {
-        self.buttons_pressed.borrow_mut().remove(button)
-    }
-
-    #[must_use]
-    pub fn wheel_scroll(&self) -> f64 {
-        self.wheel_move.replace(0.)
-    }
-
-    #[must_use]
-    pub fn position(&self) -> IVec2 {
-        self.mouse_pos.get()
     }
 }
 
-impl Drop for Mouse {
-    fn drop(&mut self) {
-        let window = window();
+thread_local! {
+    static MOUSE: Mouse = Mouse::new();
+}
 
-        window.set_onmousedown(None);
-        window.set_onmouseup(None);
+#[must_use]
+pub fn is_down(button: Button) -> bool {
+    MOUSE.with(|m| m.buttons_down.borrow().contains(&button))
+}
 
-        window
-            .remove_event_listener_with_callback("wheel", self.wheel_closure.unchecked_ref())
-            .unwrap();
-    }
+#[must_use]
+pub fn is_pressed(button: Button) -> bool {
+    MOUSE.with(|m| m.buttons_pressed.borrow_mut().remove(&button))
+}
+
+#[must_use]
+pub fn wheel_scroll() -> f64 {
+    MOUSE.with(|m| m.wheel_move.replace(0.))
+}
+
+#[must_use]
+pub fn position() -> IVec2 {
+    MOUSE.with(|m| m.mouse_pos.get())
 }

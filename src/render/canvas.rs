@@ -4,7 +4,7 @@ use glam::{UVec2, Vec2};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, OffscreenCanvas, OffscreenCanvasRenderingContext2d};
 
-use crate::global::{document, window};
+use crate::global::window;
 
 use super::Color;
 
@@ -15,14 +15,8 @@ pub struct Canvas {
 
 impl Canvas {
     #[must_use]
-    pub fn new(canvas_id: &str) -> Self {
-        let canvas = document()
-            .get_element_by_id(canvas_id)
-            .unwrap()
-            .dyn_into::<HtmlCanvasElement>()
-            .unwrap()
-            .transfer_control_to_offscreen()
-            .unwrap();
+    pub fn new(canvas: &HtmlCanvasElement) -> Self {
+        let canvas = canvas.transfer_control_to_offscreen().unwrap();
 
         let gc = canvas
             .get_context("2d")
