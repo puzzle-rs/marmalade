@@ -9,12 +9,7 @@ async fn async_main() {
     dom_stack::set_title("Hello World");
 
     // Load an image for later drawing it
-    let image = image::from_bytes(
-        include_bytes!("../../../resources/logo.png"),
-        &image::Format::Png,
-    )
-    .await
-    .unwrap();
+    let image = image::from_bytes(include_bytes!("../../../resources/logo.png")).await;
 
     // Create an HtmlCanvas where the game will be displayed
     let html_canvas = dom_stack::create_full_screen_canvas();
@@ -48,13 +43,13 @@ async fn async_main() {
         canvas.fit_screen();
 
         // Clear canvas to black
-        canvas.clear(&Color::rgb(0, 0, 0));
+        canvas.clear(Color::rgb(0, 0, 0));
 
         // Draw the 100px by 100px sprite at coordinates x, y
         canvas.draw_image(position, size, &image);
 
         // Draw a transparent rectangle on top of the sprite to give it a red tint
-        canvas.draw_rect(position, size, &Color::rgba(127, 0, 0, 127));
+        canvas.draw_rect(position, size, Color::rgba(127, 0, 0, 127));
     });
 }
 

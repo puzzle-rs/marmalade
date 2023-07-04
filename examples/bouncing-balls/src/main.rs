@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::time::Duration;
 
 use glam::Vec2;
+use marmalade::audio;
 use marmalade::dom_stack;
 use marmalade::draw_scheduler;
 use marmalade::global::window;
@@ -29,7 +30,7 @@ impl Ball {
         }
     }
 
-    pub fn tick(&mut self) {
+    pub fn tick(&mut self) -> f32 {
         self.speed += GRAVITY;
         self.position += self.speed;
 
@@ -40,21 +41,29 @@ impl Ball {
         let width = window.inner_width().unwrap().as_f64().unwrap() as f32;
         let height = window.inner_height().unwrap().as_f64().unwrap() as f32;
 
+        let mut collision_strength = 0.;
+
         if self.position.x - self.radius < 0. {
             self.position.x = self.radius;
             self.speed.x = -self.speed.x;
+            collision_strength = self.speed.x.abs()
         } else if self.position.x + self.radius > width {
             self.position.x = width - self.radius;
             self.speed.x = -self.speed.x;
+            collision_strength = self.speed.x.abs()
         }
 
         if self.position.y - self.radius < 0. {
             self.position.y = self.radius;
             self.speed.y = -self.speed.y;
+            collision_strength = self.speed.y.abs()
         } else if self.position.y + self.radius > height {
             self.position.y = height - self.radius;
             self.speed.y = -self.speed.y;
+            collision_strength = self.speed.y.abs()
         }
+
+        collision_strength
     }
 
     pub fn collide(a: &mut Ball, b: &mut Ball) {
@@ -71,6 +80,8 @@ impl Ball {
 }
 
 async fn async_main() {
+    let sound = audio::from_bytes(include_bytes!("resources/bounce.flac")).await;
+
     dom_stack::set_title("Bouncing Balls");
 
     let mut balls = Vec::new();
@@ -89,16 +100,20 @@ async fn async_main() {
         if keyboard::is_pressed(Key::Space) {
             balls.push(RefCell::new(Ball::new(
                 Vec2::new(30., 30.),
-                Vec2::new(1., 0.),
+                Vec2::new(3., 0.),
                 25.,
             )));
 
             write_instructions = false;
         }
 
+        let mut loudest = 0f32;
+
         for _ in 0..tick_scheduler.tick_count() {
             for ball in &mut balls {
-                ball.borrow_mut().tick();
+                let collision_strength = ball.borrow_mut().tick();
+
+                loudest = loudest.max(collision_strength);
             }
 
             for a in 0..balls.len() {
@@ -108,13 +123,17 @@ async fn async_main() {
             }
         }
 
+        if loudest > 0.1 {
+            audio::play(&sound, (loudest - 0.1).clamp(0., 1.));
+        }
+
         canvas.fit_screen();
 
-        canvas.clear(&Color::rgba(0, 0, 0, 63));
+        canvas.clear(Color::rgba(0, 0, 0, 63));
 
         for ball in &balls {
             let ball = ball.borrow_mut();
-            canvas.draw_disk(ball.position, ball.radius, &Color::rgb(255, 127, 0));
+            canvas.draw_disk(ball.position, ball.radius, Color::rgb(255, 127, 0));
         }
 
         if write_instructions {
@@ -122,7 +141,7 @@ async fn async_main() {
                 "Press SPACE to throw a ball",
                 Vec2::new(50., 100.),
                 50.,
-                &Color::rgb(255, 255, 255),
+                Color::rgb(255, 255, 255),
             );
         }
     });

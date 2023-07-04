@@ -2,7 +2,7 @@ use std::f64::consts::TAU;
 
 use glam::{UVec2, Vec2};
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlCanvasElement, OffscreenCanvas, OffscreenCanvasRenderingContext2d};
+use web_sys::{HtmlCanvasElement, ImageBitmap, OffscreenCanvas, OffscreenCanvasRenderingContext2d};
 
 use crate::global::window;
 
@@ -42,13 +42,11 @@ impl Canvas {
         Self { canvas, gc }
     }
 
-    pub fn clear(&self, clear_color: &Color) {
+    pub fn clear(&self, clear_color: Color) {
         let window = window();
 
         let width = window.inner_width().unwrap().as_f64().unwrap();
         let height = window.inner_height().unwrap().as_f64().unwrap();
-
-        self.gc.set_image_smoothing_enabled(false);
 
         self.draw_rect(
             Vec2::ZERO,
@@ -61,6 +59,7 @@ impl Canvas {
         if size.x != self.canvas.width() || size.y != self.canvas.height() {
             self.canvas.set_width(size.x);
             self.canvas.set_height(size.y);
+            self.gc.set_image_smoothing_enabled(false);
         }
     }
 
@@ -73,19 +72,19 @@ impl Canvas {
         ));
     }
 
-    fn set_color(&self, color: &Color) {
+    fn set_color(&self, color: Color) {
         self.gc.set_fill_style(&color.to_css_color().into());
 
         self.gc.set_global_alpha(color.a as f64 / 255.);
     }
 
-    pub fn draw_rect(&self, pos: Vec2, size: Vec2, color: &Color) {
+    pub fn draw_rect(&self, pos: Vec2, size: Vec2, color: Color) {
         self.set_color(color);
         self.gc
             .fill_rect(pos.x as f64, pos.y as f64, size.x as f64, size.y as f64);
     }
 
-    pub fn draw_disk(&self, center: Vec2, radius: f32, color: &Color) {
+    pub fn draw_disk(&self, center: Vec2, radius: f32, color: Color) {
         self.set_color(color);
 
         self.gc.begin_path();
@@ -97,11 +96,11 @@ impl Canvas {
         self.gc.fill();
     }
 
-    pub fn draw_image(&self, pos: Vec2, size: Vec2, img: &web_sys::HtmlImageElement) {
+    pub fn draw_image(&self, pos: Vec2, size: Vec2, img: &ImageBitmap) {
         self.gc.set_global_alpha(1.);
 
         self.gc
-            .draw_image_with_html_image_element_and_dw_and_dh(
+            .draw_image_with_image_bitmap_and_dw_and_dh(
                 img,
                 pos.x as f64,
                 pos.y as f64,
@@ -111,7 +110,7 @@ impl Canvas {
             .unwrap();
     }
 
-    pub fn draw_text(&self, text: &str, pos: Vec2, height: f32, color: &Color) {
+    pub fn draw_text(&self, text: &str, pos: Vec2, height: f32, color: Color) {
         self.set_color(color);
 
         self.gc.set_font(&format!("{height}px sans-serif"));

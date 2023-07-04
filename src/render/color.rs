@@ -1,4 +1,4 @@
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
@@ -18,7 +18,7 @@ impl Color {
     }
 
     #[must_use]
-    pub fn to_css_color(&self) -> String {
+    pub fn to_css_color(self) -> String {
         format!("rgb({},{},{})", self.r, self.g, self.b)
     }
 }

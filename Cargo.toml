@@ -11,12 +11,12 @@ categories = ["game-development", "graphics", "gui"]
 keywords = ["gamedev", "web"]
 
 [dependencies]
-base64 = "0.21.2"
 futures-channel = "0.3.28"
 futures-util = "0.3.28"
 glam = "0.24.1"
 js-sys = "0.3.64"
 wasm-bindgen = "0.2.87"
+wasm-bindgen-futures = "0.4.37"
 web-sys = { version = "0.3.64", features = [
     "HtmlImageElement",
     "Window",
@@ -24,7 +24,6 @@ web-sys = { version = "0.3.64", features = [
     "KeyboardEvent",
     "MouseEvent",
     "WheelEvent",
-    "EventTarget",
     "AddEventListenerOptions",
     "HtmlCanvasElement",
     "OffscreenCanvasRenderingContext2d",
@@ -35,4 +34,12 @@ web-sys = { version = "0.3.64", features = [
     "OffscreenCanvas",
     "Performance",
     "CssStyleDeclaration",
+    "ImageBitmap",
+    "AudioContext",
+    "AudioBufferSourceNode",
+    "AudioBuffer",
+    "AudioDestinationNode",
+    "GainNode",
+    "AudioParam",
+    "Blob",
 ] }

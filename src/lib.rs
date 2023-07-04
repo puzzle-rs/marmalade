@@ -11,6 +11,7 @@
     clippy::cast_precision_loss
 )]
 
+pub mod audio;
 pub mod console;
 pub mod dom_stack;
 pub mod draw_scheduler;

@@ -10,10 +10,9 @@ pub async fn sleep(duration: &Duration) {
 
     window()
         .set_timeout_with_callback_and_timeout_and_arguments_0(
-            Closure::once(move || {
+            Closure::once_into_js(move || {
                 send.send(()).unwrap();
             })
-            .into_js_value()
             .unchecked_ref(),
             duration.as_millis() as i32,
         )

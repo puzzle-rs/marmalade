@@ -1,7 +1,7 @@
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, Node};
 
-use crate::global::document;
+use crate::global::{body, document};
 
 const FULL_SCREEN_CANVAS_CSS: &str = "position:absolute;top:0;left:0;";
 
@@ -23,15 +23,11 @@ pub fn create_full_screen_canvas() -> HtmlCanvasElement {
 }
 
 pub fn stack_node<T: AsRef<Node>>(node: T) {
-    document()
-        .body()
-        .unwrap()
-        .append_child(node.as_ref())
-        .unwrap();
+    body().append_child(node.as_ref()).unwrap();
 }
 
 pub fn pop_node() {
-    let body = document().body().unwrap();
+    let body = body();
 
     body.remove_child(&body.last_child().unwrap()).unwrap();
 }
