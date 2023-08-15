@@ -8,12 +8,12 @@ use crate::global::window;
 
 use super::Color;
 
-pub struct Canvas {
+pub struct Context2d {
     canvas: OffscreenCanvas,
     gc: OffscreenCanvasRenderingContext2d,
 }
 
-impl Canvas {
+impl Context2d {
     #[must_use]
     pub fn new(canvas: &HtmlCanvasElement) -> Self {
         let canvas = canvas.transfer_control_to_offscreen().unwrap();
@@ -48,6 +48,8 @@ impl Canvas {
         let width = window.inner_width().unwrap().as_f64().unwrap();
         let height = window.inner_height().unwrap().as_f64().unwrap();
 
+        self.gc.clear_rect(0., 0., width, height);
+
         self.draw_rect(
             Vec2::ZERO,
             Vec2::new(width as f32, height as f32),
@@ -59,7 +61,7 @@ impl Canvas {
         if size.x != self.canvas.width() || size.y != self.canvas.height() {
             self.canvas.set_width(size.x);
             self.canvas.set_height(size.y);
-            self.gc.set_image_smoothing_enabled(false);
+            //self.gc.set_image_smoothing_enabled(false);
         }
     }
 

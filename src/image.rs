@@ -28,7 +28,7 @@ pub async fn from_bytes(bytes: &[u8]) -> ImageBitmap {
     let array = Array::new();
     array.push(&Uint8Array::from(bytes).into_js_result().unwrap());
 
-    return JsFuture::from(
+    JsFuture::from(
         window()
             .create_image_bitmap_with_blob(&Blob::new_with_u8_array_sequence(&array).unwrap())
             .unwrap(),
@@ -36,5 +36,5 @@ pub async fn from_bytes(bytes: &[u8]) -> ImageBitmap {
     .await
     .unwrap()
     .dyn_into::<ImageBitmap>()
-    .unwrap();
+    .unwrap()
 }

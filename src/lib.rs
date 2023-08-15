@@ -8,7 +8,8 @@
     clippy::new_without_default,
     clippy::option_if_let_else,
     clippy::module_name_repetitions,
-    clippy::cast_precision_loss
+    clippy::cast_precision_loss,
+    clippy::cast_possible_wrap
 )]
 
 pub mod audio;

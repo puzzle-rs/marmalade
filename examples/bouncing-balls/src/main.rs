@@ -7,7 +7,10 @@ use marmalade::dom_stack;
 use marmalade::draw_scheduler;
 use marmalade::global::window;
 use marmalade::input::{keyboard, Key};
-use marmalade::render::{Canvas, Color};
+use marmalade::render::object2d::Circle2D;
+use marmalade::render::Color;
+use marmalade::render::Context2d;
+use marmalade::render::Webgl2d;
 use marmalade::tick_scheduler::TickScheduler;
 
 const GRAVITY: Vec2 = Vec2::new(0., 0.0015);
@@ -31,7 +34,7 @@ impl Ball {
     }
 
     pub fn tick(&mut self) -> f32 {
-        self.speed += GRAVITY;
+        self.speed -= GRAVITY;
         self.position += self.speed;
 
         self.speed *= FRICTION;
@@ -86,11 +89,15 @@ async fn async_main() {
 
     let mut balls = Vec::new();
 
-    let html_canvas = dom_stack::create_full_screen_canvas();
+    let main_canvas = dom_stack::create_full_screen_canvas();
+    dom_stack::stack_node(&main_canvas);
 
-    dom_stack::stack_node(&html_canvas);
+    let text_canvas = dom_stack::create_full_screen_canvas();
+    dom_stack::stack_node(&text_canvas);
 
-    let canvas = Canvas::new(&html_canvas);
+    let mut wgl = Webgl2d::new(&main_canvas);
+
+    let gc = Context2d::new(&text_canvas);
 
     let mut tick_scheduler = TickScheduler::new(Duration::from_millis(1));
 
@@ -98,8 +105,13 @@ async fn async_main() {
 
     draw_scheduler::set_on_draw(move || {
         if keyboard::is_pressed(Key::Space) {
+            let win = window();
+
             balls.push(RefCell::new(Ball::new(
-                Vec2::new(30., 30.),
+                Vec2::new(
+                    30.,
+                    win.inner_height().unwrap().as_f64().unwrap() as f32 - 30.,
+                ),
                 Vec2::new(3., 0.),
                 25.,
             )));
@@ -127,17 +139,25 @@ async fn async_main() {
             audio::play(&sound, (loudest - 0.1).clamp(0., 1.));
         }
 
-        canvas.fit_screen();
+        wgl.fit_screen();
+        gc.fit_screen();
 
-        canvas.clear(Color::rgba(0, 0, 0, 63));
+        wgl.pixel_perfect_view();
+
+        wgl.clear(Color::rgb(0, 0, 0));
+        gc.clear(Color::rgba(0, 0, 0, 0));
 
         for ball in &balls {
             let ball = ball.borrow_mut();
-            canvas.draw_disk(ball.position, ball.radius, Color::rgb(255, 127, 0));
+
+            let circle =
+                Circle2D::new_colored(ball.position, ball.radius, 32, Color::rgb(255, 127, 0));
+
+            wgl.draw(&circle);
         }
 
         if write_instructions {
-            canvas.draw_text(
+            gc.draw_text(
                 "Press SPACE to throw a ball",
                 Vec2::new(50., 100.),
                 50.,
