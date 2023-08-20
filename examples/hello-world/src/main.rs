@@ -3,10 +3,11 @@ use marmalade::dom_stack;
 use marmalade::draw_scheduler;
 use marmalade::image;
 use marmalade::input::{keyboard, Key};
-use marmalade::render::object2d::Circle2D;
+use marmalade::render::atlas::AtlasBuilder;
+use marmalade::render::webgl2d::DrawTarget;
+use marmalade::render::webgl2d::Webgl2d;
 use marmalade::render::Color;
 use marmalade::render::Context2d;
-use marmalade::render::Webgl2d;
 
 async fn async_main() {
     dom_stack::set_title("Hello World");
@@ -30,8 +31,12 @@ async fn async_main() {
     // Load an image
     let image = image::from_bytes(include_bytes!("../../../resources/logo.png")).await;
 
-    // Upload the image to the GPU
-    let texture = wgl2d.create_texture(&image);
+    // Create a texture atlas and add the image
+    let mut atlas_builder = AtlasBuilder::new();
+    let image_rect = atlas_builder.insert_image(&image);
+
+    // Upload the atlas to the gpu
+    wgl2d.set_texture(&atlas_builder.build_atlas());
 
     let mut position = Vec2::new(200., 200.);
 
@@ -62,13 +67,14 @@ async fn async_main() {
         wgl2d.clear(Color::rgb(0, 0, 0));
         ctx2d.clear(Color::rgba(0, 0, 0, 0)); // Fully transparent
 
-        // Create an hexagon (circle with six sides) with our texture and draw it
-        let textured_circle = Circle2D::new_textured(position, 100., 6, texture.clone());
-        wgl2d.draw(&textured_circle);
+        // Create an hexagon with our texture and draw it
+        wgl2d.draw_textured_rect(position, Vec2::new(200., 200.), &image_rect);
 
         // Draw a transparent red hexagon on top of it
-        let colored_circle = Circle2D::new_colored(position, 100., 6, Color::rgba(127, 0, 0, 127));
-        wgl2d.draw(&colored_circle);
+        wgl2d.draw_colored_rect(position, Vec2::new(200., 200.), Color::rgba(127, 0, 0, 127));
+
+        // Make sure everything is drawn
+        wgl2d.flush();
 
         ctx2d.draw_text(
             "Move with W A S D",

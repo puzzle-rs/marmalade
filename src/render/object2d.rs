@@ -81,7 +81,7 @@ impl Rect2D {
             colors: [
                 r, g, b, a, r, g, b, a, r, g, b, a, r, g, b, a, r, g, b, a, r, g, b, a,
             ],
-            texcoords: [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+            texcoords: [0.; 12],
             texture: None,
         }
     }
@@ -96,24 +96,21 @@ impl Rect2D {
 
         Self {
             points: [x, y, x + w, y, x, y + h, x + w, y, x, y + h, x + w, y + h],
-            colors: [
-                1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                1., 1., 1.,
-            ],
+            colors: [1.; 24],
             texcoords: [0., 1., 1., 1., 0., 0., 1., 1., 0., 0., 1., 0.],
             texture: Some(texture),
         }
     }
 }
 
-pub struct Circle2D {
+pub struct Regular2D {
     points: Vec<f32>,
     colors: Vec<f32>,
     texcoords: Vec<f32>,
     texture: Option<WebGlTexture>,
 }
 
-impl Drawable2D for Circle2D {
+impl Drawable2D for Regular2D {
     fn get_draw_data(&self) -> DrawData2D {
         DrawData2D {
             positions: &self.points,
@@ -128,7 +125,7 @@ impl Drawable2D for Circle2D {
     }
 }
 
-impl Circle2D {
+impl Regular2D {
     #[must_use]
     pub fn new_colored(center: Vec2, radius: f32, sides: u16, color: Color) -> Self {
         let color = color.f32_color();
@@ -137,19 +134,18 @@ impl Circle2D {
         let mut colors = Vec::new();
         let texcoords = vec![0.; sides as usize * 6];
 
-        for i in 0..sides {
-            let x1 = (i as f32 * TAU / sides as f32).cos();
-            let y1 = (i as f32 * TAU / sides as f32).sin();
+        let step_size = TAU / sides as f32;
 
-            let x2 = ((i + 1) as f32 * TAU / sides as f32).cos();
-            let y2 = ((i + 1) as f32 * TAU / sides as f32).sin();
+        for i in 0..sides {
+            let (y1, x1) = (i as f32 * step_size).sin_cos();
+            let (y2, x2) = ((i + 1) as f32 * step_size).sin_cos();
 
             points.push(center.x);
             points.push(center.y);
-            points.push(x1.mul_add(radius, center.x));
-            points.push(y1.mul_add(radius, center.y));
-            points.push(x2.mul_add(radius, center.x));
-            points.push(y2.mul_add(radius, center.y));
+            points.push(x1 * radius + center.x);
+            points.push(y1 * radius + center.y);
+            points.push(x2 * radius + center.x);
+            points.push(y2 * radius + center.y);
 
             for _ in 0..3 {
                 colors.push(color.x);
@@ -182,10 +178,10 @@ impl Circle2D {
 
             points.push(center.x);
             points.push(center.y);
-            points.push(x1.mul_add(radius, center.x));
-            points.push(y1.mul_add(radius, center.y));
-            points.push(x2.mul_add(radius, center.x));
-            points.push(y2.mul_add(radius, center.y));
+            points.push(x1 * radius + center.x);
+            points.push(y1 * radius + center.y);
+            points.push(x2 * radius + center.x);
+            points.push(y2 * radius + center.y);
 
             texcoords.push(0.5);
             texcoords.push(0.5);

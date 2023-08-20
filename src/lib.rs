@@ -9,7 +9,9 @@
     clippy::option_if_let_else,
     clippy::module_name_repetitions,
     clippy::cast_precision_loss,
-    clippy::cast_possible_wrap
+    clippy::cast_possible_wrap,
+    clippy::many_single_char_names,
+    clippy::suboptimal_flops
 )]
 
 pub mod audio;

@@ -7,7 +7,7 @@ use marmalade::dom_stack;
 use marmalade::draw_scheduler;
 use marmalade::global::window;
 use marmalade::input::{keyboard, Key};
-use marmalade::render::object2d::Circle2D;
+use marmalade::render::object2d::Regular2D;
 use marmalade::render::Color;
 use marmalade::render::Context2d;
 use marmalade::render::Webgl2d;
@@ -151,7 +151,7 @@ async fn async_main() {
             let ball = ball.borrow_mut();
 
             let circle =
-                Circle2D::new_colored(ball.position, ball.radius, 32, Color::rgb(255, 127, 0));
+                Regular2D::new_colored(ball.position, ball.radius, 32, Color::rgb(255, 127, 0));
 
             wgl.draw(&circle);
         }
