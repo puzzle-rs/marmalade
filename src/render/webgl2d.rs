@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, f32::consts::TAU};
 
 use glam::{Mat3, UVec2, Vec2, Vec3};
 use wasm_bindgen::JsCast;
@@ -52,7 +52,7 @@ pub trait DrawTarget {
                 t_x + t_w,
                 t_y,
             ],
-        )
+        );
     }
 
     fn draw_colored_rect(&mut self, position: Vec2, size: Vec2, color: Color) {
@@ -60,7 +60,85 @@ pub trait DrawTarget {
     }
 
     fn draw_textured_rect(&mut self, position: Vec2, size: Vec2, texture: &TextureRect) {
-        self.draw_rect(position, size, Color::rgb(255, 255, 255), &texture);
+        self.draw_rect(position, size, Color::rgb(255, 255, 255), texture);
+    }
+
+    fn draw_regular(
+        &mut self,
+        center: Vec2,
+        radius: f32,
+        sides: u16,
+        color: Color,
+        texture: &TextureRect,
+    ) {
+        let c_x = center.x;
+        let c_y = center.y;
+
+        let f32_color = color.f32_color();
+
+        let r = f32_color.x;
+        let g = f32_color.y;
+        let b = f32_color.z;
+        let a = f32_color.w;
+
+        let t_x = texture.position.x;
+        let t_y = texture.position.y;
+
+        let t_w = texture.size.x;
+        let t_h = texture.size.y;
+
+        let mut indexes = Vec::new();
+        let mut positions = Vec::new();
+        let mut colors = Vec::new();
+        let mut texcoords = Vec::new();
+
+        positions.push(c_x);
+        positions.push(c_y);
+
+        colors.push(r);
+        colors.push(g);
+        colors.push(b);
+        colors.push(a);
+
+        texcoords.push(t_x + t_w / 2.);
+        texcoords.push(t_y + t_h / 2.);
+
+        let step_size = TAU / sides as f32;
+
+        for i in 1..=sides {
+            indexes.push(0);
+            indexes.push(i);
+            indexes.push(if i == sides { 1 } else { i + 1 });
+
+            let (sin_y, cos_x) = (i as f32 * step_size).sin_cos();
+
+            positions.push(c_x + cos_x * radius);
+            positions.push(c_y + sin_y * radius);
+
+            colors.push(r);
+            colors.push(g);
+            colors.push(b);
+            colors.push(a);
+
+            texcoords.push(t_x + t_w * (cos_x + 1.) / 2.);
+            texcoords.push(t_y + t_h * (1. - sin_y) / 2.);
+        }
+
+        self.draw_raw(&indexes, &positions, &colors, &texcoords);
+    }
+
+    fn draw_colored_regular(&mut self, center: Vec2, radius: f32, sides: u16, color: Color) {
+        self.draw_regular(center, radius, sides, color, &NO_TEXTURE_RECT);
+    }
+
+    fn draw_textured_regular(
+        &mut self,
+        center: Vec2,
+        radius: f32,
+        sides: u16,
+        texture: &TextureRect,
+    ) {
+        self.draw_regular(center, radius, sides, Color::rgb(255, 255, 255), texture);
     }
 }
 
@@ -74,8 +152,9 @@ pub struct BufferBuilder2d {
 }
 
 impl BufferBuilder2d {
-    pub fn new() -> BufferBuilder2d {
-        BufferBuilder2d {
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
             index_counter: 0,
             indexes: Vec::new(),
             positions: Vec::new(),
@@ -323,7 +402,7 @@ impl Webgl2d {
         self.view_matrix = view_matrix;
     }
 
-    /// Set the view matrix so that world coordinates corresponds to pixel on the canvas
+    /// Set the view matrix so that world coordinates corresponds to pixels on the canvas
     pub fn pixel_perfect_view(&mut self) {
         self.view_matrix = Mat3::from_cols(
             Vec3::new(2. / self.canvas.width() as f32, 0., 0.),
@@ -413,6 +492,10 @@ impl Webgl2d {
 
 impl DrawTarget for Webgl2d {
     fn draw_raw(&mut self, indexes: &[u16], positions: &[f32], colors: &[f32], texcoords: &[f32]) {
+        if self.direct_draw_builder.borrow().indexes.len() + indexes.len() > u16::MAX as usize {
+            self.flush();
+        }
+
         self.direct_draw_builder
             .borrow_mut()
             .draw_raw(indexes, positions, colors, texcoords);

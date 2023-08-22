@@ -7,10 +7,10 @@ use marmalade::dom_stack;
 use marmalade::draw_scheduler;
 use marmalade::global::window;
 use marmalade::input::{keyboard, Key};
-use marmalade::render::object2d::Regular2D;
+use marmalade::render::webgl2d::DrawTarget;
+use marmalade::render::webgl2d::Webgl2d;
 use marmalade::render::Color;
 use marmalade::render::Context2d;
-use marmalade::render::Webgl2d;
 use marmalade::tick_scheduler::TickScheduler;
 
 const GRAVITY: Vec2 = Vec2::new(0., 0.0015);
@@ -150,11 +150,10 @@ async fn async_main() {
         for ball in &balls {
             let ball = ball.borrow_mut();
 
-            let circle =
-                Regular2D::new_colored(ball.position, ball.radius, 32, Color::rgb(255, 127, 0));
-
-            wgl.draw(&circle);
+            wgl.draw_colored_regular(ball.position, ball.radius, 32, Color::rgb(255, 127, 0));
         }
+
+        wgl.flush();
 
         if write_instructions {
             gc.draw_text(

@@ -68,10 +68,10 @@ async fn async_main() {
         ctx2d.clear(Color::rgba(0, 0, 0, 0)); // Fully transparent
 
         // Create an hexagon with our texture and draw it
-        wgl2d.draw_textured_rect(position, Vec2::new(200., 200.), &image_rect);
+        wgl2d.draw_textured_regular(position, 100., 6, &image_rect);
 
         // Draw a transparent red hexagon on top of it
-        wgl2d.draw_colored_rect(position, Vec2::new(200., 200.), Color::rgba(127, 0, 0, 127));
+        wgl2d.draw_colored_regular(position, 100., 6, Color::rgba(127, 0, 0, 127));
 
         // Make sure everything is drawn
         wgl2d.flush();

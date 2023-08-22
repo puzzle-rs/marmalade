@@ -23,7 +23,8 @@ pub struct AtlasBuilder {
 }
 
 impl AtlasBuilder {
-    pub fn new() -> AtlasBuilder {
+    #[must_use]
+    pub fn new() -> Self {
         let canvas = OffscreenCanvas::new(TEXTURE_SIZE, TEXTURE_SIZE)
             .expect("Error, can't create canvas for texture atlas");
 
@@ -38,7 +39,7 @@ impl AtlasBuilder {
 
         gc.fill_rect(0., 0., 1., 1.);
 
-        AtlasBuilder {
+        Self {
             x: 1,
             y: 0,
             next_y: 1,
@@ -117,6 +118,7 @@ impl AtlasBuilder {
         rect
     }
 
+    #[must_use]
     pub fn build_atlas(self) -> ImageBitmap {
         self.canvas.transfer_to_image_bitmap().unwrap()
     }
