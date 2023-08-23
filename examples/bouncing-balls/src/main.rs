@@ -7,7 +7,7 @@ use marmalade::dom_stack;
 use marmalade::draw_scheduler;
 use marmalade::global::window;
 use marmalade::input::{keyboard, Key};
-use marmalade::render::webgl2d::DrawTarget;
+use marmalade::render::webgl2d::DrawTarget2d;
 use marmalade::render::webgl2d::Webgl2d;
 use marmalade::render::Color;
 use marmalade::render::Context2d;

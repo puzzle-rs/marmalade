@@ -15,7 +15,7 @@ use super::{
     Color,
 };
 
-pub trait DrawTarget {
+pub trait DrawTarget2d {
     fn draw_raw(&mut self, indexes: &[u16], positions: &[f32], colors: &[f32], texcoords: &[f32]);
 
     fn draw_rect(&mut self, position: Vec2, size: Vec2, color: Color, texture: &TextureRect) {
@@ -164,7 +164,7 @@ impl BufferBuilder2d {
     }
 }
 
-impl DrawTarget for BufferBuilder2d {
+impl DrawTarget2d for BufferBuilder2d {
     fn draw_raw(&mut self, indexes: &[u16], positions: &[f32], colors: &[f32], texcoords: &[f32]) {
         assert_eq!(positions.len(), texcoords.len());
         assert_eq!(positions.len() * 2, colors.len());
@@ -490,7 +490,7 @@ impl Webgl2d {
     }
 }
 
-impl DrawTarget for Webgl2d {
+impl DrawTarget2d for Webgl2d {
     fn draw_raw(&mut self, indexes: &[u16], positions: &[f32], colors: &[f32], texcoords: &[f32]) {
         if self.direct_draw_builder.borrow().indexes.len() + indexes.len() > u16::MAX as usize {
             self.flush();
