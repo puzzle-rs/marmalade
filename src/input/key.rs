@@ -42,6 +42,7 @@ pub enum Key {
 }
 
 impl Key {
+    /// Create a key from the given code, returns None if the code is unknown
     #[must_use]
     pub fn from_code(code: &str) -> Option<Self> {
         Some(match code {

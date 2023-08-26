@@ -5,6 +5,11 @@ use web_sys::{Blob, HtmlImageElement, ImageBitmap};
 
 use crate::global::window;
 
+/// Load an image from the network at the given src
+///
+/// # Errors
+///
+/// Returns Err if the image couldn't be loaded from src
 pub async fn load(src: &str) -> Result<ImageBitmap, ()> {
     let img = HtmlImageElement::new().unwrap();
     img.set_src(src);

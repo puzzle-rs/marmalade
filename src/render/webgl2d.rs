@@ -16,8 +16,10 @@ use super::{
 };
 
 pub trait DrawTarget2d {
+    /// Draw on context from raw vertex data
     fn draw_raw(&mut self, indexes: &[u16], positions: &[f32], colors: &[f32], texcoords: &[f32]);
 
+    /// Draw a rectangle, color and texture are multiplied
     fn draw_rect(&mut self, position: Vec2, size: Vec2, color: Color, texture: &TextureRect) {
         let x = position.x;
         let y = position.y;
@@ -55,14 +57,17 @@ pub trait DrawTarget2d {
         );
     }
 
+    /// Draw a rectangle with given color
     fn draw_colored_rect(&mut self, position: Vec2, size: Vec2, color: Color) {
         self.draw_rect(position, size, color, &NO_TEXTURE_RECT);
     }
 
+    /// Draw a rectangle with given texture
     fn draw_textured_rect(&mut self, position: Vec2, size: Vec2, texture: &TextureRect) {
         self.draw_rect(position, size, Color::rgb(255, 255, 255), texture);
     }
 
+    /// Draw a regular polygon, color and texture are multiplied
     fn draw_regular(
         &mut self,
         center: Vec2,
@@ -127,10 +132,12 @@ pub trait DrawTarget2d {
         self.draw_raw(&indexes, &positions, &colors, &texcoords);
     }
 
+    /// Draw a regular polygon with given color
     fn draw_colored_regular(&mut self, center: Vec2, radius: f32, sides: u16, color: Color) {
         self.draw_regular(center, radius, sides, color, &NO_TEXTURE_RECT);
     }
 
+    /// Draw a regular polygon with given texture
     fn draw_textured_regular(
         &mut self,
         center: Vec2,
@@ -151,6 +158,7 @@ pub struct BufferBuilder2d {
     texcoords: Vec<f32>,
 }
 
+/// Buffer builder is used to upload geometry data to the gpu in advance and redraw it without having to reupload it
 impl BufferBuilder2d {
     #[must_use]
     pub const fn new() -> Self {
@@ -197,6 +205,7 @@ pub struct Buffer2d {
     texcoord_buffer: WebGlBuffer,
 }
 
+/// A accelerated 2d drawing context backed by webgl2
 pub struct Webgl2d {
     canvas: OffscreenCanvas,
     gl: WebGl2RenderingContext,
@@ -223,6 +232,7 @@ impl Webgl2d {
         Self::internal_new(canvas)
     }
 
+    #[must_use]
     fn internal_new(canvas: OffscreenCanvas) -> Self {
         let webgl = canvas
             .get_context("webgl2")
@@ -305,6 +315,8 @@ impl Webgl2d {
         }
     }
 
+    /// Draw the given buffer on the canvas.
+    /// It may be necessary to flush draw calls done without a buffer before drawing this buffer, it is however never needed to flush after drawing a buffer.
     pub fn draw_buffer(&self, buffer: &Buffer2d) {
         self.gl.bind_buffer(
             WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
@@ -398,6 +410,7 @@ impl Webgl2d {
         }
     }
 
+    /// Set the view matrix of this context, is is used to convert from world coordinates to opengl coordinates
     pub fn set_view_matrix(&mut self, view_matrix: Mat3) {
         self.view_matrix = view_matrix;
     }
@@ -427,6 +440,33 @@ impl Webgl2d {
         );
     }
 
+    /// Computes the world coordinates corresponding to the given screen coordinates with the current view matrix
+    pub fn screen_to_world_pos(&self, screen_pos: Vec2) -> Vec2 {
+        let screen_to_ogl_matrix = Mat3::from_cols(
+            Vec3::new(2. / self.canvas.width() as f32, 0., 0.),
+            Vec3::new(0., -2. / self.canvas.height() as f32, 0.),
+            Vec3::new(-1., 1., 1.),
+        );
+
+        self.view_matrix
+            .inverse()
+            .transform_point2(screen_to_ogl_matrix.transform_point2(screen_pos))
+    }
+
+    /// Computes the screen coordinates corresponding to the given world coordinates with the current view matrix
+    pub fn world_to_screen_pos(&self, world_pos: Vec2) -> Vec2 {
+        let screen_to_ogl_matrix = Mat3::from_cols(
+            Vec3::new(2. / self.canvas.width() as f32, 0., 0.),
+            Vec3::new(0., -2. / self.canvas.height() as f32, 0.),
+            Vec3::new(-1., 1., 1.),
+        );
+
+        screen_to_ogl_matrix
+            .inverse()
+            .transform_point2(self.view_matrix.transform_point2(world_pos))
+    }
+
+    /// Set the texture that will be used by the graphic context, it is usually built with a `AtlasBuilder`
     pub fn set_texture(&self, image: &ImageBitmap) {
         let texture = self.gl.create_texture().expect("Can't create texture");
         self.gl
@@ -458,6 +498,7 @@ impl Webgl2d {
         self.gl.generate_mipmap(WebGl2RenderingContext::TEXTURE_2D);
     }
 
+    /// Clear canvas with the given color
     pub fn clear(&self, clear_color: Color) {
         let c = clear_color.f32_color();
 
@@ -465,6 +506,7 @@ impl Webgl2d {
         self.gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
     }
 
+    /// Set the size of this canvas
     pub fn set_size(&self, size: UVec2) {
         if size.x != self.canvas.width() || size.y != self.canvas.height() {
             self.canvas.set_width(size.x);
@@ -474,6 +516,7 @@ impl Webgl2d {
         }
     }
 
+    /// Set the size of the canvas to the window
     pub fn fit_screen(&self) {
         let window = window();
 
@@ -483,6 +526,7 @@ impl Webgl2d {
         ));
     }
 
+    /// Flush the internal draw buffers, this should be called after drawing each frame to ensure changes are displayed
     pub fn flush(&mut self) {
         let buffer = self.build_buffer(&mut self.direct_draw_builder.borrow_mut());
 

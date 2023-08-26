@@ -6,6 +6,7 @@ pub enum Button {
 }
 
 impl Button {
+    /// Create a mouse button for the given code, return None if the code is unknown
     #[must_use]
     pub const fn from_code(code: i16) -> Option<Self> {
         Some(match code {

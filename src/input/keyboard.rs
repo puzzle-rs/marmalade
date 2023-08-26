@@ -59,11 +59,13 @@ thread_local! {
     static KEYBOARD:Keyboard = Keyboard::new();
 }
 
+/// Returns true if the given key is currently down, false otherwise
 #[must_use]
 pub fn is_down(key: Key) -> bool {
     KEYBOARD.with(|k| k.keys_down.borrow().contains(&key))
 }
 
+/// Returns true if the given key has been pressed since last `is_pressed` call, false otherwise
 #[must_use]
 pub fn is_pressed(key: Key) -> bool {
     KEYBOARD.with(|k| k.keys_pressed.borrow_mut().remove(&key))

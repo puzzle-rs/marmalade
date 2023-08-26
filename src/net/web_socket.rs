@@ -24,6 +24,11 @@ pub struct WebSocket {
 pub struct WebSocketError;
 
 impl WebSocket {
+    /// Open a websocket to the given url
+    ///
+    /// # Errors
+    ///
+    /// Will return Err if the connection can't be established
     pub async fn new(url: &str) -> Result<Self, ()> {
         if let Ok(ws) = web_sys::WebSocket::new(url) {
             let (mut send, mut recv) = mpsc::channel(0);
@@ -89,16 +94,24 @@ impl WebSocket {
         }
     }
 
+    /// Check if this websocket connection is open
     #[must_use]
     pub fn is_open(&self) -> bool {
         self.open.get()
     }
 
+    /// Close this websocket connection
     pub fn close(&self) {
         self.ws.close().unwrap();
         self.open.set(false);
     }
 
+    /// Read a single message from this websocket
+    /// returns None if there is no unread messages
+    ///
+    /// # Errors
+    ///
+    /// returns Err if this websocket is closed or if an error ocurred
     pub fn read(&self) -> Result<Option<Message>, WebSocketError> {
         if let Some(msg) = self.recv.borrow_mut().pop_front() {
             Ok(Some(msg))
@@ -109,6 +122,11 @@ impl WebSocket {
         }
     }
 
+    /// Send a string though this websocket
+    ///
+    /// # Errors
+    ///
+    /// returns Err if the string couldn't be sent
     pub fn send_str(&self, msg: &str) -> Result<(), WebSocketError> {
         if self.ws.send_with_str(msg).is_err() {
             self.open.set(false);
@@ -118,6 +136,11 @@ impl WebSocket {
         }
     }
 
+    /// Send binary data through this websocket
+    ///
+    /// # Errors
+    ///
+    /// returns Err if the data couldn't be sent
     pub fn send_bin(&self, msg: &[u8]) -> Result<(), WebSocketError> {
         if self.ws.send_with_u8_array(msg).is_err() {
             self.open.set(false);

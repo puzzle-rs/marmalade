@@ -101,21 +101,25 @@ thread_local! {
     static MOUSE: Mouse = Mouse::new();
 }
 
+/// Returns true if the given button is currently down, false otherwise
 #[must_use]
 pub fn is_down(button: Button) -> bool {
     MOUSE.with(|m| m.buttons_down.borrow().contains(&button))
 }
 
+/// Returns true if the given button has been pressed since last `is_pressed` call, false otherwise
 #[must_use]
 pub fn is_pressed(button: Button) -> bool {
     MOUSE.with(|m| m.buttons_pressed.borrow_mut().remove(&button))
 }
 
+/// Returns the mouse scroll value since last `wheel_scroll` call
 #[must_use]
 pub fn wheel_scroll() -> f64 {
     MOUSE.with(|m| m.wheel_move.replace(0.))
 }
 
+/// Returns the current mouse position in pixels
 #[must_use]
 pub fn position() -> IVec2 {
     MOUSE.with(|m| m.mouse_pos.get())
