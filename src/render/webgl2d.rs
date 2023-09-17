@@ -1,23 +1,48 @@
-use std::{cell::RefCell, f32::consts::TAU};
+use std::{cell::RefCell, f32::consts::TAU, rc::Rc};
 
+use fontdue::Font;
 use glam::{Mat3, UVec2, Vec2, Vec3};
+use js_sys::Object;
 use wasm_bindgen::JsCast;
 use web_sys::{
     HtmlCanvasElement, ImageBitmap, OffscreenCanvas, WebGl2RenderingContext, WebGlBuffer,
-    WebGlUniformLocation,
+    WebGlTexture, WebGlUniformLocation,
 };
 
 use crate::global::window;
 
 use super::{
-    atlas::{TextureRect, NO_TEXTURE_RECT},
     webgl_util::{buffer_f32_slice, buffer_u16_indexes, compile_shader, link_program},
     Color,
 };
 
+#[derive(Clone)]
+pub struct TextureRect {
+    pub webgl_texture: Rc<WebGlTexture>,
+    pub position: Vec2,
+    pub size: Vec2,
+}
+
+impl TextureRect {
+    fn new(texture: WebGlTexture) -> Self {
+        Self {
+            webgl_texture: Rc::new(texture),
+            position: Vec2::ZERO,
+            size: Vec2::ONE,
+        }
+    }
+}
+
 pub trait DrawTarget2d {
     /// Draw on context from raw vertex data
-    fn draw_raw(&mut self, indexes: &[u16], positions: &[f32], colors: &[f32], texcoords: &[f32]);
+    fn draw_raw(
+        &mut self,
+        indexes: &[u16],
+        positions: &[f32],
+        colors: &[f32],
+        texcoords: &[f32],
+        texture: &Rc<WebGlTexture>,
+    );
 
     /// Draw a rectangle, color and texture are multiplied
     fn draw_rect(&mut self, position: Vec2, size: Vec2, color: Color, texture: &TextureRect) {
@@ -54,17 +79,8 @@ pub trait DrawTarget2d {
                 t_x + t_w,
                 t_y,
             ],
+            &texture.webgl_texture,
         );
-    }
-
-    /// Draw a rectangle with given color
-    fn draw_colored_rect(&mut self, position: Vec2, size: Vec2, color: Color) {
-        self.draw_rect(position, size, color, &NO_TEXTURE_RECT);
-    }
-
-    /// Draw a rectangle with given texture
-    fn draw_textured_rect(&mut self, position: Vec2, size: Vec2, texture: &TextureRect) {
-        self.draw_rect(position, size, Color::rgb(255, 255, 255), texture);
     }
 
     /// Draw a regular polygon, color and texture are multiplied
@@ -129,37 +145,28 @@ pub trait DrawTarget2d {
             texcoords.push(t_y + t_h * (1. - sin_y) / 2.);
         }
 
-        self.draw_raw(&indexes, &positions, &colors, &texcoords);
-    }
-
-    /// Draw a regular polygon with given color
-    fn draw_colored_regular(&mut self, center: Vec2, radius: f32, sides: u16, color: Color) {
-        self.draw_regular(center, radius, sides, color, &NO_TEXTURE_RECT);
-    }
-
-    /// Draw a regular polygon with given texture
-    fn draw_textured_regular(
-        &mut self,
-        center: Vec2,
-        radius: f32,
-        sides: u16,
-        texture: &TextureRect,
-    ) {
-        self.draw_regular(center, radius, sides, Color::rgb(255, 255, 255), texture);
+        self.draw_raw(
+            &indexes,
+            &positions,
+            &colors,
+            &texcoords,
+            &texture.webgl_texture,
+        );
     }
 }
 
 /// A utility struct for easily batching geometry together
-pub struct BufferBuilder2d {
+pub struct ObjectBuilder2d {
     index_counter: u16,
     indexes: Vec<u16>,
     positions: Vec<f32>,
     colors: Vec<f32>,
     texcoords: Vec<f32>,
+    texture: Option<Rc<WebGlTexture>>,
 }
 
-/// Buffer builder is used to upload geometry data to the gpu in advance and redraw it without having to reupload it
-impl BufferBuilder2d {
+/// Object builder is used to create buffers that can be reused efficiently without having to reupload everything to the GPU every time
+impl ObjectBuilder2d {
     #[must_use]
     pub const fn new() -> Self {
         Self {
@@ -168,14 +175,37 @@ impl BufferBuilder2d {
             positions: Vec::new(),
             colors: Vec::new(),
             texcoords: Vec::new(),
+            texture: None,
         }
     }
 }
 
-impl DrawTarget2d for BufferBuilder2d {
-    fn draw_raw(&mut self, indexes: &[u16], positions: &[f32], colors: &[f32], texcoords: &[f32]) {
-        assert_eq!(positions.len(), texcoords.len());
-        assert_eq!(positions.len() * 2, colors.len());
+impl DrawTarget2d for ObjectBuilder2d {
+    fn draw_raw(
+        &mut self,
+        indexes: &[u16],
+        positions: &[f32],
+        colors: &[f32],
+        texcoords: &[f32],
+        texture: &Rc<WebGlTexture>,
+    ) {
+        assert_eq!(
+            positions.len(),
+            texcoords.len(),
+            "Buffer length doesn't match"
+        );
+        assert_eq!(
+            positions.len() * 2,
+            colors.len(),
+            "Buffer length doesn't match"
+        );
+
+        assert!(
+            self.texture
+                .as_ref()
+                .map_or(true, |tex| Rc::ptr_eq(tex, texture)),
+            "All texture rect must share the same texture inside a given buffer"
+        );
 
         let mut increment = 0;
 
@@ -192,20 +222,25 @@ impl DrawTarget2d for BufferBuilder2d {
         self.positions.extend_from_slice(positions);
         self.colors.extend_from_slice(colors);
         self.texcoords.extend_from_slice(texcoords);
+
+        if self.texture.is_none() {
+            self.texture = Some(texture.clone());
+        }
     }
 }
 
 /// A buffer of geometry ready to be drawn to the screen.
 /// Can be reused multiple times efficiently without having to rebuild one
-pub struct Buffer2d {
+pub struct BufferedObject2d {
     count: u16,
     index_buffer: WebGlBuffer,
     position_buffer: WebGlBuffer,
     color_buffer: WebGlBuffer,
     texcoord_buffer: WebGlBuffer,
+    texture: Rc<WebGlTexture>,
 }
 
-/// A accelerated 2d drawing context backed by webgl2
+/// An accelerated 2d drawing context backed by webgl2
 pub struct Webgl2d {
     canvas: OffscreenCanvas,
     gl: WebGl2RenderingContext,
@@ -214,7 +249,8 @@ pub struct Webgl2d {
     texcoord_attribute_location: i32,
     view_matrix_uniform_location: WebGlUniformLocation,
     view_matrix: Mat3,
-    direct_draw_builder: RefCell<BufferBuilder2d>,
+    direct_draw_builder: RefCell<ObjectBuilder2d>,
+    white_texture: TextureRect,
 }
 
 impl Webgl2d {
@@ -234,8 +270,14 @@ impl Webgl2d {
 
     #[must_use]
     fn internal_new(canvas: OffscreenCanvas) -> Self {
+        let options = Object::new();
+        js_sys::Reflect::set(&options, &"antialias".into(), &true.into())
+            .expect("Can't write webgl option");
+        js_sys::Reflect::set(&options, &"alpha".into(), &false.into())
+            .expect("Can't write webgl option");
+
         let webgl = canvas
-            .get_context("webgl2")
+            .get_context_with_context_options("webgl2", &options.into())
             .unwrap()
             .unwrap()
             .dyn_into::<WebGl2RenderingContext>()
@@ -311,13 +353,19 @@ impl Webgl2d {
             texcoord_attribute_location,
             view_matrix_uniform_location,
             view_matrix: Mat3::IDENTITY,
-            direct_draw_builder: RefCell::new(BufferBuilder2d::new()),
+            direct_draw_builder: RefCell::new(ObjectBuilder2d::new()),
+            white_texture: TextureRect::new(white_texture),
         }
+    }
+
+    /// Get a single pixel white texture, this is used to draw objects that have a color and no texture
+    pub fn white_texture(&self) -> TextureRect {
+        self.white_texture.clone()
     }
 
     /// Draw the given buffer on the canvas.
     /// It may be necessary to flush draw calls done without a buffer before drawing this buffer, it is however never needed to flush after drawing a buffer.
-    pub fn draw_buffer(&self, buffer: &Buffer2d) {
+    pub fn draw_buffer(&self, buffer: &BufferedObject2d) {
         self.gl.bind_buffer(
             WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
             Some(&buffer.index_buffer),
@@ -368,6 +416,9 @@ impl Webgl2d {
             &self.view_matrix.to_cols_array(),
         );
 
+        self.gl
+            .bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&buffer.texture));
+
         self.gl.draw_elements_with_i32(
             WebGl2RenderingContext::TRIANGLES,
             buffer.count as i32,
@@ -377,9 +428,10 @@ impl Webgl2d {
     }
 
     /// Create the opengl buffers from the data inside the builder
-    /// After this operation the builder is emptied and ca be reused for building different geometry
-    /// (Reusing it is more efficient since it can reuse some of its previous memory)
-    pub fn build_buffer(&self, buffer: &mut BufferBuilder2d) -> Buffer2d {
+    /// After this operation the builder is emptied and can be reused for building different geometry
+    /// None is returned if the buffer was empty
+    /// (Reusing it is more efficient since it can prevent reallocation of internal buffers)
+    pub fn build_buffer(&self, buffer: &mut ObjectBuilder2d) -> Option<BufferedObject2d> {
         let index_buffer: WebGlBuffer = self.gl.create_buffer().expect("Failed to create buffer");
         buffer_u16_indexes(&self.gl, &index_buffer, &buffer.indexes);
 
@@ -401,13 +453,14 @@ impl Webgl2d {
         buffer.colors.clear();
         buffer.texcoords.clear();
 
-        Buffer2d {
+        buffer.texture.take().map(|texture| BufferedObject2d {
             count,
             index_buffer,
             position_buffer,
             color_buffer,
             texcoord_buffer,
-        }
+            texture,
+        })
     }
 
     /// Set the view matrix of this context, is is used to convert from world coordinates to opengl coordinates
@@ -466,11 +519,11 @@ impl Webgl2d {
             .transform_point2(self.view_matrix.transform_point2(world_pos))
     }
 
-    /// Set the texture that will be used by the graphic context, it is usually built with a `AtlasBuilder`
-    pub fn set_texture(&self, image: &ImageBitmap) {
-        let texture = self.gl.create_texture().expect("Can't create texture");
+    /// Upload the given image to GPU and return a texture rect on it
+    pub fn create_texture(&self, image: &ImageBitmap) -> TextureRect {
+        let webgl_texture = self.gl.create_texture().expect("Can't create texture");
         self.gl
-            .bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&texture));
+            .bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&webgl_texture));
 
         self.gl.tex_parameteri(
             WebGl2RenderingContext::TEXTURE_2D,
@@ -482,6 +535,17 @@ impl Webgl2d {
             WebGl2RenderingContext::TEXTURE_2D,
             WebGl2RenderingContext::TEXTURE_MAG_FILTER,
             WebGl2RenderingContext::NEAREST as i32,
+        );
+
+        self.gl.tex_parameteri(
+            WebGl2RenderingContext::TEXTURE_2D,
+            WebGl2RenderingContext::TEXTURE_WRAP_S,
+            WebGl2RenderingContext::CLAMP_TO_EDGE as i32,
+        );
+        self.gl.tex_parameteri(
+            WebGl2RenderingContext::TEXTURE_2D,
+            WebGl2RenderingContext::TEXTURE_WRAP_T,
+            WebGl2RenderingContext::CLAMP_TO_EDGE as i32,
         );
 
         self.gl
@@ -496,13 +560,97 @@ impl Webgl2d {
             .expect("Can't upload image to gpu");
 
         self.gl.generate_mipmap(WebGl2RenderingContext::TEXTURE_2D);
+
+        TextureRect::new(webgl_texture)
+    }
+
+    pub fn draw_text(
+        &mut self,
+        position: Vec2,
+        height: f32,
+        text: &str,
+        font: &Font,
+        px: f32,
+        color: Color,
+    ) {
+        let mut px_pos = Vec2::ZERO;
+
+        let mut image_bytes = Vec::new();
+
+        for c in text.chars() {
+            let (metric, bytes) = font.rasterize(c, px);
+
+            image_bytes.clear();
+
+            for b in bytes {
+                image_bytes.push(255);
+                image_bytes.push(255);
+                image_bytes.push(255);
+                image_bytes.push(b);
+            }
+
+            let webgl_texture = self.gl.create_texture().expect("Can't create texture");
+            self.gl
+                .bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&webgl_texture));
+
+            self.gl.tex_parameteri(
+                WebGl2RenderingContext::TEXTURE_2D,
+                WebGl2RenderingContext::TEXTURE_MIN_FILTER,
+                WebGl2RenderingContext::LINEAR_MIPMAP_LINEAR as i32,
+            );
+
+            self.gl.tex_parameteri(
+                WebGl2RenderingContext::TEXTURE_2D,
+                WebGl2RenderingContext::TEXTURE_MAG_FILTER,
+                WebGl2RenderingContext::NEAREST as i32,
+            );
+
+            self.gl.tex_parameteri(
+                WebGl2RenderingContext::TEXTURE_2D,
+                WebGl2RenderingContext::TEXTURE_WRAP_S,
+                WebGl2RenderingContext::CLAMP_TO_EDGE as i32,
+            );
+            self.gl.tex_parameteri(
+                WebGl2RenderingContext::TEXTURE_2D,
+                WebGl2RenderingContext::TEXTURE_WRAP_T,
+                WebGl2RenderingContext::CLAMP_TO_EDGE as i32,
+            );
+
+            self.gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_u8_array_and_src_offset(
+                    WebGl2RenderingContext::TEXTURE_2D,
+                    0,
+                    WebGl2RenderingContext::RGBA as i32,
+                    metric.width as i32,
+                    metric.height as i32,
+                    0,
+                    WebGl2RenderingContext::RGBA,
+                    WebGl2RenderingContext::UNSIGNED_BYTE,
+                    &image_bytes,
+                    0,
+                )
+                .expect("Can't upload image to gpu");
+
+            self.gl.generate_mipmap(WebGl2RenderingContext::TEXTURE_2D);
+
+            let texture = TextureRect::new(webgl_texture);
+
+            self.draw_rect(
+                position
+                    + (px_pos + Vec2::new(metric.xmin as f32, metric.ymin as f32)) * (height / px),
+                Vec2::new(metric.width as f32, metric.height as f32) * (height / px),
+                color,
+                &texture,
+            );
+
+            px_pos.x += metric.advance_width;
+        }
     }
 
     /// Clear canvas with the given color
     pub fn clear(&self, clear_color: Color) {
         let c = clear_color.f32_color();
-
-        self.gl.clear_color(c.x, c.y, c.z, c.w);
+        //self.gl.color_mask(false, false, false, true);
+        self.gl.clear_color(c.x, c.y, c.z, 1.);
         self.gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
     }
 
@@ -528,20 +676,35 @@ impl Webgl2d {
 
     /// Flush the internal draw buffers, this should be called after drawing each frame to ensure changes are displayed
     pub fn flush(&mut self) {
-        let buffer = self.build_buffer(&mut self.direct_draw_builder.borrow_mut());
-
-        self.draw_buffer(&buffer);
+        if let Some(buffer) = self.build_buffer(&mut self.direct_draw_builder.borrow_mut()) {
+            self.draw_buffer(&buffer);
+        }
     }
 }
 
 impl DrawTarget2d for Webgl2d {
-    fn draw_raw(&mut self, indexes: &[u16], positions: &[f32], colors: &[f32], texcoords: &[f32]) {
-        if self.direct_draw_builder.borrow().indexes.len() + indexes.len() > u16::MAX as usize {
+    fn draw_raw(
+        &mut self,
+        indexes: &[u16],
+        positions: &[f32],
+        colors: &[f32],
+        texcoords: &[f32],
+        texture: &Rc<WebGlTexture>,
+    ) {
+        // Flush when point count exceeds an u16 or when switching texture
+        if self.direct_draw_builder.borrow().indexes.len() + indexes.len() > u16::MAX as usize
+            || self
+                .direct_draw_builder
+                .borrow()
+                .texture
+                .as_ref()
+                .map_or(false, |tex| !Rc::ptr_eq(texture, tex))
+        {
             self.flush();
         }
 
         self.direct_draw_builder
             .borrow_mut()
-            .draw_raw(indexes, positions, colors, texcoords);
+            .draw_raw(indexes, positions, colors, texcoords, texture);
     }
 }

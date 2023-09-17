@@ -11,4 +11,5 @@ out vec4 outColor;
 
 void main() {
     outColor = texture(uTexture, vTexcoord) * vColor;
+    outColor.rgb *= outColor.a;
 }

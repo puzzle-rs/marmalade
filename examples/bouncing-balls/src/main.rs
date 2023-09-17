@@ -5,12 +5,12 @@ use glam::Vec2;
 use marmalade::audio;
 use marmalade::dom_stack;
 use marmalade::draw_scheduler;
+use marmalade::font;
 use marmalade::global::window;
 use marmalade::input::{keyboard, Key};
 use marmalade::render::webgl2d::DrawTarget2d;
 use marmalade::render::webgl2d::Webgl2d;
 use marmalade::render::Color;
-use marmalade::render::Context2d;
 use marmalade::tick_scheduler::TickScheduler;
 
 const GRAVITY: Vec2 = Vec2::new(0., 0.0015);
@@ -85,6 +85,10 @@ impl Ball {
 async fn async_main() {
     let sound = audio::from_bytes(include_bytes!("resources/bounce.flac")).await;
 
+    let font = font::from_bytes(include_bytes!(
+        "../../../resources/fonts/RobotoMono-Regular.ttf"
+    ));
+
     dom_stack::set_title("Bouncing Balls");
 
     let mut balls = Vec::new();
@@ -92,16 +96,13 @@ async fn async_main() {
     let main_canvas = dom_stack::create_full_screen_canvas();
     dom_stack::stack_node(&main_canvas);
 
-    let text_canvas = dom_stack::create_full_screen_canvas();
-    dom_stack::stack_node(&text_canvas);
-
     let mut wgl = Webgl2d::new(&main_canvas);
-
-    let gc = Context2d::new(&text_canvas);
 
     let mut tick_scheduler = TickScheduler::new(Duration::from_millis(1));
 
     let mut write_instructions = true;
+
+    let white_texture = wgl.white_texture();
 
     draw_scheduler::set_on_draw(move || {
         if keyboard::is_pressed(Key::Space) {
@@ -140,25 +141,31 @@ async fn async_main() {
         }
 
         wgl.fit_screen();
-        gc.fit_screen();
 
         wgl.pixel_perfect_view();
 
         wgl.clear(Color::rgb(0, 0, 0));
-        gc.clear(Color::rgba(0, 0, 0, 0));
 
         for ball in &balls {
             let ball = ball.borrow_mut();
 
-            wgl.draw_colored_regular(ball.position, ball.radius, 32, Color::rgb(255, 127, 0));
+            wgl.draw_regular(
+                ball.position,
+                ball.radius,
+                32,
+                Color::rgb(255, 127, 0),
+                &white_texture,
+            );
         }
 
         wgl.flush();
 
         if write_instructions {
-            gc.draw_text(
-                "Press SPACE to throw a ball",
+            wgl.draw_text(
                 Vec2::new(50., 100.),
+                50.,
+                "Press SPACE to throw a ball",
+                &font,
                 50.,
                 Color::rgb(255, 255, 255),
             );
