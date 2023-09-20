@@ -3,10 +3,10 @@ use std::time::Duration;
 
 use glam::Vec2;
 use marmalade::audio;
+use marmalade::dom::window;
 use marmalade::dom_stack;
 use marmalade::draw_scheduler;
 use marmalade::font;
-use marmalade::global::window;
 use marmalade::input::{keyboard, Key};
 use marmalade::render::webgl2d::DrawTarget2d;
 use marmalade::render::webgl2d::Webgl2d;
@@ -85,10 +85,6 @@ impl Ball {
 async fn async_main() {
     let sound = audio::from_bytes(include_bytes!("resources/bounce.flac")).await;
 
-    let font = font::from_bytes(include_bytes!(
-        "../../../resources/fonts/RobotoMono-Regular.ttf"
-    ));
-
     dom_stack::set_title("Bouncing Balls");
 
     let mut balls = Vec::new();
@@ -163,10 +159,10 @@ async fn async_main() {
         if write_instructions {
             wgl.draw_text(
                 Vec2::new(50., 100.),
-                50.,
+                64.,
                 "Press SPACE to throw a ball",
-                &font,
-                50.,
+                font::monogram().as_ref(),
+                16.,
                 Color::rgb(255, 255, 255),
             );
         }

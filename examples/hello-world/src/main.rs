@@ -25,10 +25,6 @@ async fn async_main() {
     // Upload the image to the GPU
     let image_rect = wgl2d.create_texture(&image);
 
-    let font = font::from_bytes(include_bytes!(
-        "../../../resources/fonts/RobotoMono-Regular.ttf"
-    ));
-
     let mut position = Vec2::new(300., 300.);
 
     // Closure called for every frame
@@ -63,8 +59,8 @@ async fn async_main() {
             Vec2::new(100., 100.),
             50.,
             "Move with W A S D",
-            &font,
-            50.,
+            font::monogram().as_ref(),
+            16.,
             Color::rgb(255, 255, 255),
         );
 

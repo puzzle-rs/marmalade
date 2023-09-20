@@ -1,7 +1,7 @@
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, Node};
 
-use crate::global::{body, document};
+use crate::dom::{body, document};
 
 const FULL_SCREEN_CANVAS_CSS: &str = "position:absolute;top:0;left:0;";
 

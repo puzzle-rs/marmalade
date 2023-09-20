@@ -5,7 +5,7 @@ use std::{
 
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
 
-use crate::global::window;
+use crate::dom::window;
 
 struct DrawScheduler {
     draw_closure: Rc<RefCell<Box<dyn FnMut()>>>,

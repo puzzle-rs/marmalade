@@ -3,7 +3,7 @@ use wasm_bindgen::{JsCast, __rt::IntoJsResult};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Blob, HtmlImageElement, ImageBitmap};
 
-use crate::global::window;
+use crate::dom::window;
 
 /// Load an image from the network at the given src
 ///

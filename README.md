@@ -33,6 +33,6 @@ Then open your web browser on [localhost:8080](localhost:8080)
 ## License
 The library itself is licensed under the [MPL-2.0 license](LICENSE)
 
-The Roboto Mono font is licensed under the [Apache-2.0 license](resources/fonts/LICENSE)
+The [Monogram font](https://datagoblin.itch.io/monogram) is included in the library and licensed under the [CC0 1.0 license](https://creativecommons.org/publicdomain/zero/1.0/)
 
 The Marmalade logo can be used under the [CC BY 4.0 license](https://creativecommons.org/licenses/by/4.0/)

@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashSet, rc::Rc};
 use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::KeyboardEvent;
 
-use crate::global::window;
+use crate::dom::window;
 
 use super::key::Key;
 

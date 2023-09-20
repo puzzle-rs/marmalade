@@ -16,10 +16,10 @@
 
 pub mod audio;
 pub mod console;
+pub mod dom;
 pub mod dom_stack;
 pub mod draw_scheduler;
 pub mod font;
-pub mod global;
 pub mod image;
 pub mod input;
 pub mod net;

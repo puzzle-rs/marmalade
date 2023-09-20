@@ -9,7 +9,7 @@ use web_sys::{
     WebGlTexture, WebGlUniformLocation,
 };
 
-use crate::global::window;
+use crate::dom::window;
 
 use super::{
     webgl_util::{buffer_f32_slice, buffer_u16_indexes, compile_shader, link_program},

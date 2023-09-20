@@ -8,7 +8,7 @@ use glam::IVec2;
 use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::{AddEventListenerOptions, MouseEvent, WheelEvent};
 
-use crate::global::window;
+use crate::dom::window;
 
 use super::Button;
 

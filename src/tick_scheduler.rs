@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::global::performance;
+use crate::dom::performance;
 
 pub struct TickScheduler {
     last_tick: f64,
