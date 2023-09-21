@@ -4,9 +4,9 @@ use marmalade::draw_scheduler;
 use marmalade::font;
 use marmalade::image;
 use marmalade::input::{keyboard, Key};
-use marmalade::render::webgl2d::DrawTarget2d;
-use marmalade::render::webgl2d::Webgl2d;
-use marmalade::render::Color;
+use marmalade::render::canvas2d::Canvas2d;
+use marmalade::render::canvas2d::DrawTarget2d;
+use marmalade::render::color;
 
 async fn async_main() {
     dom_stack::set_title("Hello World");
@@ -17,13 +17,13 @@ async fn async_main() {
     dom_stack::stack_node(&main_canvas);
 
     // Create a context for drawing the "game", webgl context is fast and flexible, but a bit more complicated and can't draw text
-    let mut wgl2d = Webgl2d::new(&main_canvas);
+    let mut canvas = Canvas2d::new(&main_canvas);
 
     // Load an image
     let image = image::from_bytes(include_bytes!("../../../resources/images/logo.png")).await;
 
     // Upload the image to the GPU
-    let image_rect = wgl2d.create_texture(&image);
+    let image_rect = canvas.create_texture(&image);
 
     let mut position = Vec2::new(300., 300.);
 
@@ -44,28 +44,28 @@ async fn async_main() {
         }
 
         // Set size of the canvas to the same as screen
-        wgl2d.fit_screen();
+        canvas.fit_screen();
 
         // Set the view matrix so that coordinates corresponds to pixels on the canvas
-        wgl2d.pixel_perfect_view();
+        canvas.pixel_perfect_view();
 
         // Clear canvas to black
-        wgl2d.clear(Color::rgb(0, 0, 0));
+        canvas.clear(color::rgb(0., 0., 0.));
 
         // Create an hexagon with our texture and a red filter then draw it
-        wgl2d.draw_regular(position, 100., 6, Color::rgb(255, 127, 127), &image_rect);
+        canvas.draw_regular(position, 100., 6, color::rgb(1., 0.5, 0.5), &image_rect);
 
-        wgl2d.draw_text(
+        canvas.draw_text(
             Vec2::new(100., 100.),
             50.,
             "Move with W A S D",
             font::monogram().as_ref(),
             16.,
-            Color::rgb(255, 255, 255),
+            color::rgb(1., 1., 1.),
         );
 
         // Make sure everything is drawn
-        wgl2d.flush();
+        canvas.flush();
     });
 }
 

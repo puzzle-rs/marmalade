@@ -1,7 +1,7 @@
 use std::{cell::RefCell, f32::consts::TAU, rc::Rc};
 
 use fontdue::Font;
-use glam::{Mat3, UVec2, Vec2, Vec3};
+use glam::{Mat3, UVec2, Vec2, Vec3, Vec4};
 use js_sys::Object;
 use wasm_bindgen::JsCast;
 use web_sys::{
@@ -11,10 +11,7 @@ use web_sys::{
 
 use crate::dom::window;
 
-use super::{
-    webgl_util::{buffer_f32_slice, buffer_u16_indexes, compile_shader, link_program},
-    Color,
-};
+use super::webgl_util::{buffer_f32_slice, buffer_u16_indexes, compile_shader, link_program};
 
 #[derive(Clone)]
 pub struct TextureRect {
@@ -45,19 +42,17 @@ pub trait DrawTarget2d {
     );
 
     /// Draw a rectangle, color and texture are multiplied
-    fn draw_rect(&mut self, position: Vec2, size: Vec2, color: Color, texture: &TextureRect) {
+    fn draw_rect(&mut self, position: Vec2, size: Vec2, color: Vec4, texture: &TextureRect) {
         let x = position.x;
         let y = position.y;
 
         let w = size.x;
         let h = size.y;
 
-        let f32_color = color.f32_color();
-
-        let r = f32_color.x;
-        let g = f32_color.y;
-        let b = f32_color.z;
-        let a = f32_color.w;
+        let r = color.x;
+        let g = color.y;
+        let b = color.z;
+        let a = color.w;
 
         let t_x = texture.position.x;
         let t_y = texture.position.y;
@@ -89,18 +84,16 @@ pub trait DrawTarget2d {
         center: Vec2,
         radius: f32,
         sides: u16,
-        color: Color,
+        color: Vec4,
         texture: &TextureRect,
     ) {
         let c_x = center.x;
         let c_y = center.y;
 
-        let f32_color = color.f32_color();
-
-        let r = f32_color.x;
-        let g = f32_color.y;
-        let b = f32_color.z;
-        let a = f32_color.w;
+        let r = color.x;
+        let g = color.y;
+        let b = color.z;
+        let a = color.w;
 
         let t_x = texture.position.x;
         let t_y = texture.position.y;
@@ -241,7 +234,7 @@ pub struct BufferedObject2d {
 }
 
 /// An accelerated 2d drawing context backed by webgl2
-pub struct Webgl2d {
+pub struct Canvas2d {
     canvas: OffscreenCanvas,
     gl: WebGl2RenderingContext,
     position_attribute_location: i32,
@@ -253,7 +246,7 @@ pub struct Webgl2d {
     white_texture: TextureRect,
 }
 
-impl Webgl2d {
+impl Canvas2d {
     #[must_use]
     pub fn new(canvas: &HtmlCanvasElement) -> Self {
         let canvas = canvas.transfer_control_to_offscreen().unwrap();
@@ -286,13 +279,13 @@ impl Webgl2d {
         let vert_shader = compile_shader(
             &webgl,
             WebGl2RenderingContext::VERTEX_SHADER,
-            include_str!("webgl2d.vert"),
+            include_str!("canvas2d.vert"),
         );
 
         let frag_shader = compile_shader(
             &webgl,
             WebGl2RenderingContext::FRAGMENT_SHADER,
-            include_str!("webgl2d.frag"),
+            include_str!("canvas2d.frag"),
         );
 
         let program = link_program(&webgl, &vert_shader, &frag_shader);
@@ -465,6 +458,7 @@ impl Webgl2d {
 
     /// Set the view matrix of this context, is is used to convert from world coordinates to opengl coordinates
     pub fn set_view_matrix(&mut self, view_matrix: Mat3) {
+        self.flush();
         self.view_matrix = view_matrix;
     }
 
@@ -571,7 +565,7 @@ impl Webgl2d {
         text: &str,
         font: &Font,
         px: f32,
-        color: Color,
+        color: Vec4,
     ) {
         let mut px_pos = Vec2::ZERO;
 
@@ -647,10 +641,9 @@ impl Webgl2d {
     }
 
     /// Clear canvas with the given color
-    pub fn clear(&self, clear_color: Color) {
-        let c = clear_color.f32_color();
+    pub fn clear(&self, color: Vec4) {
         //self.gl.color_mask(false, false, false, true);
-        self.gl.clear_color(c.x, c.y, c.z, 1.);
+        self.gl.clear_color(color.x, color.y, color.z, 1.);
         self.gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
     }
 
@@ -682,7 +675,7 @@ impl Webgl2d {
     }
 }
 
-impl DrawTarget2d for Webgl2d {
+impl DrawTarget2d for Canvas2d {
     fn draw_raw(
         &mut self,
         indexes: &[u16],

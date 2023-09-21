@@ -8,9 +8,9 @@ use marmalade::dom_stack;
 use marmalade::draw_scheduler;
 use marmalade::font;
 use marmalade::input::{keyboard, Key};
-use marmalade::render::webgl2d::DrawTarget2d;
-use marmalade::render::webgl2d::Webgl2d;
-use marmalade::render::Color;
+use marmalade::render::canvas2d::Canvas2d;
+use marmalade::render::canvas2d::DrawTarget2d;
+use marmalade::render::color;
 use marmalade::tick_scheduler::TickScheduler;
 
 const GRAVITY: Vec2 = Vec2::new(0., 0.0015);
@@ -92,13 +92,13 @@ async fn async_main() {
     let main_canvas = dom_stack::create_full_screen_canvas();
     dom_stack::stack_node(&main_canvas);
 
-    let mut wgl = Webgl2d::new(&main_canvas);
+    let mut canvas = Canvas2d::new(&main_canvas);
 
     let mut tick_scheduler = TickScheduler::new(Duration::from_millis(1));
 
     let mut write_instructions = true;
 
-    let white_texture = wgl.white_texture();
+    let white_texture = canvas.white_texture();
 
     draw_scheduler::set_on_draw(move || {
         if keyboard::is_pressed(Key::Space) {
@@ -136,34 +136,34 @@ async fn async_main() {
             audio::play(&sound, (loudest - 0.1).clamp(0., 1.));
         }
 
-        wgl.fit_screen();
+        canvas.fit_screen();
 
-        wgl.pixel_perfect_view();
+        canvas.pixel_perfect_view();
 
-        wgl.clear(Color::rgb(0, 0, 0));
+        canvas.clear(color::rgb(0., 0., 0.));
 
         for ball in &balls {
             let ball = ball.borrow_mut();
 
-            wgl.draw_regular(
+            canvas.draw_regular(
                 ball.position,
                 ball.radius,
                 32,
-                Color::rgb(255, 127, 0),
+                color::rgb(1., 0.5, 0.),
                 &white_texture,
             );
         }
 
-        wgl.flush();
+        canvas.flush();
 
         if write_instructions {
-            wgl.draw_text(
+            canvas.draw_text(
                 Vec2::new(50., 100.),
                 64.,
                 "Press SPACE to throw a ball",
                 font::monogram().as_ref(),
                 16.,
-                Color::rgb(255, 255, 255),
+                color::rgb(1., 1., 1.),
             );
         }
     });

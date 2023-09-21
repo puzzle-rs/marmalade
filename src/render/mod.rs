@@ -1,5 +1,3 @@
-mod color;
-pub mod webgl2d;
+pub mod canvas2d;
+pub mod color;
 mod webgl_util;
-
-pub use color::Color;
