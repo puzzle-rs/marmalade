@@ -522,7 +522,7 @@ impl Canvas2d {
         self.gl.tex_parameteri(
             WebGl2RenderingContext::TEXTURE_2D,
             WebGl2RenderingContext::TEXTURE_MIN_FILTER,
-            WebGl2RenderingContext::LINEAR_MIPMAP_LINEAR as i32,
+            WebGl2RenderingContext::LINEAR as i32,
         );
 
         self.gl.tex_parameteri(
@@ -553,8 +553,6 @@ impl Canvas2d {
             )
             .expect("Can't upload image to gpu");
 
-        self.gl.generate_mipmap(WebGl2RenderingContext::TEXTURE_2D);
-
         TextureRect::new(webgl_texture)
     }
 
@@ -574,67 +572,66 @@ impl Canvas2d {
         for c in text.chars() {
             let (metric, bytes) = font.rasterize(c, px);
 
-            image_bytes.clear();
+            if metric.height > 0 && metric.width > 0 {
+                image_bytes.clear();
 
-            for b in bytes {
-                image_bytes.push(255);
-                image_bytes.push(255);
-                image_bytes.push(255);
-                image_bytes.push(b);
-            }
+                for b in bytes {
+                    image_bytes.push(255);
+                    image_bytes.push(255);
+                    image_bytes.push(255);
+                    image_bytes.push(b);
+                }
 
-            let webgl_texture = self.gl.create_texture().expect("Can't create texture");
-            self.gl
-                .bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&webgl_texture));
+                let webgl_texture = self.gl.create_texture().expect("Can't create texture");
+                self.gl
+                    .bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&webgl_texture));
 
-            self.gl.tex_parameteri(
-                WebGl2RenderingContext::TEXTURE_2D,
-                WebGl2RenderingContext::TEXTURE_MIN_FILTER,
-                WebGl2RenderingContext::LINEAR_MIPMAP_LINEAR as i32,
-            );
-
-            self.gl.tex_parameteri(
-                WebGl2RenderingContext::TEXTURE_2D,
-                WebGl2RenderingContext::TEXTURE_MAG_FILTER,
-                WebGl2RenderingContext::NEAREST as i32,
-            );
-
-            self.gl.tex_parameteri(
-                WebGl2RenderingContext::TEXTURE_2D,
-                WebGl2RenderingContext::TEXTURE_WRAP_S,
-                WebGl2RenderingContext::CLAMP_TO_EDGE as i32,
-            );
-            self.gl.tex_parameteri(
-                WebGl2RenderingContext::TEXTURE_2D,
-                WebGl2RenderingContext::TEXTURE_WRAP_T,
-                WebGl2RenderingContext::CLAMP_TO_EDGE as i32,
-            );
-
-            self.gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_u8_array_and_src_offset(
+                self.gl.tex_parameteri(
                     WebGl2RenderingContext::TEXTURE_2D,
-                    0,
-                    WebGl2RenderingContext::RGBA as i32,
-                    metric.width as i32,
-                    metric.height as i32,
-                    0,
-                    WebGl2RenderingContext::RGBA,
-                    WebGl2RenderingContext::UNSIGNED_BYTE,
-                    &image_bytes,
-                    0,
-                )
-                .expect("Can't upload image to gpu");
+                    WebGl2RenderingContext::TEXTURE_MIN_FILTER,
+                    WebGl2RenderingContext::LINEAR as i32,
+                );
+                self.gl.tex_parameteri(
+                    WebGl2RenderingContext::TEXTURE_2D,
+                    WebGl2RenderingContext::TEXTURE_MAG_FILTER,
+                    WebGl2RenderingContext::NEAREST as i32,
+                );
+                self.gl.tex_parameteri(
+                    WebGl2RenderingContext::TEXTURE_2D,
+                    WebGl2RenderingContext::TEXTURE_WRAP_S,
+                    WebGl2RenderingContext::CLAMP_TO_EDGE as i32,
+                );
+                self.gl.tex_parameteri(
+                    WebGl2RenderingContext::TEXTURE_2D,
+                    WebGl2RenderingContext::TEXTURE_WRAP_T,
+                    WebGl2RenderingContext::CLAMP_TO_EDGE as i32,
+                );
 
-            self.gl.generate_mipmap(WebGl2RenderingContext::TEXTURE_2D);
+                self.gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_u8_array_and_src_offset(
+                        WebGl2RenderingContext::TEXTURE_2D,
+                        0,
+                        WebGl2RenderingContext::RGBA as i32,
+                        metric.width as i32,
+                        metric.height as i32,
+                        0,
+                        WebGl2RenderingContext::RGBA,
+                        WebGl2RenderingContext::UNSIGNED_BYTE,
+                        &image_bytes,
+                        0,
+                    )
+                    .expect("Can't upload image to gpu");
 
-            let texture = TextureRect::new(webgl_texture);
+                let texture = TextureRect::new(webgl_texture);
 
-            self.draw_rect(
-                position
-                    + (px_pos + Vec2::new(metric.xmin as f32, metric.ymin as f32)) * (height / px),
-                Vec2::new(metric.width as f32, metric.height as f32) * (height / px),
-                color,
-                &texture,
-            );
+                self.draw_rect(
+                    position
+                        + (px_pos + Vec2::new(metric.xmin as f32, metric.ymin as f32))
+                            * (height / px),
+                    Vec2::new(metric.width as f32, metric.height as f32) * (height / px),
+                    color,
+                    &texture,
+                );
+            }
 
             px_pos.x += metric.advance_width;
         }
