@@ -625,8 +625,8 @@ impl Canvas2d {
 
                 self.draw_rect(
                     position
-                        + (px_pos + Vec2::new(metric.xmin as f32, metric.ymin as f32))
-                            * (height / px),
+                        + (px_pos + Vec2::new(metric.xmin as f32, metric.ymin as f32)) * height
+                            / px,
                     Vec2::new(metric.width as f32, metric.height as f32) * (height / px),
                     color,
                     &texture,
