@@ -3,17 +3,8 @@ name = "hello-world"
 version = "0.1.0"
 edition = "2021"
 
-[profile.dev]
-opt-level = 1 # Slight optimization for debug builds
-
-[profile.release]
-lto = "fat"
-codegen-units = 1
-strip = true
-opt-level = 3
-
 [dependencies]
 marmalade = { path = "../../" }
 console_error_panic_hook = "0.1.7"
-glam = "0.25.0"
+glam = "0.27.0"
 wasm-bindgen-futures = "0.4.42"

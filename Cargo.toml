@@ -10,11 +10,23 @@ readme = "README.md"
 categories = ["game-development", "graphics", "gui"]
 keywords = ["gamedev", "web"]
 
+[workspace]
+members = ["examples/hello-world", "examples/bouncing-balls"]
+
+[profile.dev]
+opt-level = 1 # Slight optimization for debug builds
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true
+opt-level = 3
+
 [dependencies]
 fontdue = "0.8.0"
 futures-channel = "0.3.30"
 futures-util = "0.3.30"
-glam = "0.25.0"
+glam = "0.27.0"
 js-sys = "0.3.69"
 wasm-bindgen = "0.2.92"
 wasm-bindgen-futures = "0.4.42"
