@@ -471,7 +471,7 @@ impl Canvas2d {
         );
     }
 
-    /// Set the view matrix to a camera centered at `cam_pos` which can see at a distance `view_radius` on the left and right
+    /// Set the view matrix to a camera centered at `cam_pos` which can see at a distance `view_radius` on the left and right.
     /// Height view distance is adjusted so that there is no stretch on the vertical axis
     pub fn camera_view(&mut self, cam_pos: Vec2, view_radius: f32) {
         let height_factor = self.canvas.width() as f32 / self.canvas.height() as f32;
@@ -488,6 +488,7 @@ impl Canvas2d {
     }
 
     /// Computes the world coordinates corresponding to the given screen coordinates with the current view matrix
+    #[must_use]
     pub fn screen_to_world_pos(&self, screen_pos: Vec2) -> Vec2 {
         let screen_to_ogl_matrix = Mat3::from_cols(
             Vec3::new(2. / self.canvas.width() as f32, 0., 0.),
@@ -501,6 +502,7 @@ impl Canvas2d {
     }
 
     /// Computes the screen coordinates corresponding to the given world coordinates with the current view matrix
+    #[must_use]
     pub fn world_to_screen_pos(&self, world_pos: Vec2) -> Vec2 {
         let screen_to_ogl_matrix = Mat3::from_cols(
             Vec3::new(2. / self.canvas.width() as f32, 0., 0.),
@@ -514,6 +516,7 @@ impl Canvas2d {
     }
 
     /// Upload the given image to GPU and return a texture rect on it
+    #[must_use]
     pub fn create_texture(&self, image: &ImageBitmap) -> TextureRect {
         let webgl_texture = self.gl.create_texture().expect("Can't create texture");
         self.gl
@@ -639,8 +642,7 @@ impl Canvas2d {
 
     /// Clear canvas with the given color
     pub fn clear(&self, color: Vec4) {
-        //self.gl.color_mask(false, false, false, true);
-        self.gl.clear_color(color.x, color.y, color.z, 1.);
+        self.gl.clear_color(color.x, color.y, color.z, color.w);
         self.gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
     }
 
@@ -688,7 +690,7 @@ impl DrawTarget2d for Canvas2d {
                 .borrow()
                 .texture
                 .as_ref()
-                .map_or(false, |tex| !Rc::ptr_eq(texture, tex))
+                .is_some_and(|tex| !Rc::ptr_eq(texture, tex))
         {
             self.flush();
         }

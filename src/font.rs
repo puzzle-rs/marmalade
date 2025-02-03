@@ -13,8 +13,6 @@ pub fn monogram() -> Rc<Font> {
 
 #[must_use]
 pub fn from_bytes(bytes: &[u8], px: f32) -> Font {
-    
-
     let settings = fontdue::FontSettings {
         scale: px,
         ..Default::default()

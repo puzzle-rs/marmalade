@@ -16,7 +16,7 @@ async fn async_main() {
     // Add the Html canvas to the dom
     dom_stack::stack_node(&main_canvas);
 
-    // Create a context for drawing the "game", webgl context is fast and flexible, but a bit more complicated and can't draw text
+    // Create a context for drawing the "game"
     let mut canvas = Canvas2d::new(&main_canvas);
 
     // Load an image

@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::cell::RefCell;
 use std::time::Duration;
 

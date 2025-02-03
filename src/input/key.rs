@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub enum Key {
     Digit1,
     Digit2,

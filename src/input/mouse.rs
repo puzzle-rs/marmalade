@@ -1,6 +1,6 @@
 use std::{
     cell::{Cell, RefCell},
-    collections::HashSet,
+    collections::BTreeSet,
     rc::Rc,
 };
 
@@ -13,10 +13,10 @@ use crate::dom::window;
 use super::Button;
 
 struct Mouse {
-    buttons_down: Rc<RefCell<HashSet<Button>>>,
-    buttons_pressed: Rc<RefCell<HashSet<Button>>>,
+    buttons_down: Rc<RefCell<BTreeSet<Button>>>,
+    buttons_pressed: Rc<RefCell<BTreeSet<Button>>>,
     wheel_move: Rc<Cell<f64>>,
-    mouse_pos: Rc<Cell<IVec2>>,
+    position: Rc<Cell<IVec2>>,
 }
 
 impl Mouse {
@@ -24,10 +24,10 @@ impl Mouse {
     fn new() -> Self {
         let window = window();
 
-        let buttons_down = Rc::new(RefCell::new(HashSet::new()));
-        let buttons_pressed = Rc::new(RefCell::new(HashSet::new()));
+        let buttons_down = Rc::new(RefCell::new(BTreeSet::new()));
+        let buttons_pressed = Rc::new(RefCell::new(BTreeSet::new()));
         let wheel_move = Rc::new(Cell::new(0.));
-        let mouse_pos = Rc::new(Cell::new(IVec2::ZERO));
+        let position = Rc::new(Cell::new(IVec2::ZERO));
 
         let buttons_down_clone = buttons_down.clone();
         let buttons_pressed_clone = buttons_pressed.clone();
@@ -63,8 +63,8 @@ impl Mouse {
 
         let wheel_move_clone = wheel_move.clone();
 
-        let mut wheel_event_listener_options = AddEventListenerOptions::new();
-        wheel_event_listener_options.passive(false);
+        let wheel_event_listener_options = AddEventListenerOptions::new();
+        wheel_event_listener_options.set_passive(false);
 
         window
             .add_event_listener_with_callback_and_add_event_listener_options(
@@ -79,10 +79,10 @@ impl Mouse {
             )
             .unwrap();
 
-        let mouse_pos_clone = mouse_pos.clone();
+        let position_clone = position.clone();
         window.set_onmousemove(Some(
             Closure::<dyn Fn(MouseEvent)>::new(move |event: MouseEvent| {
-                mouse_pos_clone.set(IVec2::new(event.page_x(), event.page_y()));
+                position_clone.set(IVec2::new(event.page_x(), event.page_y()));
             })
             .into_js_value()
             .unchecked_ref(),
@@ -92,7 +92,7 @@ impl Mouse {
             buttons_down,
             buttons_pressed,
             wheel_move,
-            mouse_pos,
+            position,
         }
     }
 }
@@ -122,5 +122,5 @@ pub fn wheel_scroll() -> f64 {
 /// Returns the current mouse position in pixels
 #[must_use]
 pub fn position() -> IVec2 {
-    MOUSE.with(|m| m.mouse_pos.get())
+    MOUSE.with(|m| m.position.get())
 }

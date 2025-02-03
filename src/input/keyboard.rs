@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashSet, rc::Rc};
+use std::{cell::RefCell, collections::BTreeSet, rc::Rc};
 
 use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::KeyboardEvent;
@@ -8,8 +8,8 @@ use crate::dom::window;
 use super::key::Key;
 
 struct Keyboard {
-    keys_down: Rc<RefCell<HashSet<Key>>>,
-    keys_pressed: Rc<RefCell<HashSet<Key>>>,
+    keys_down: Rc<RefCell<BTreeSet<Key>>>,
+    keys_pressed: Rc<RefCell<BTreeSet<Key>>>,
 }
 
 impl Keyboard {
@@ -17,8 +17,8 @@ impl Keyboard {
     fn new() -> Self {
         let window = window();
 
-        let keys_down = Rc::new(RefCell::new(HashSet::new()));
-        let keys_pressed = Rc::new(RefCell::new(HashSet::new()));
+        let keys_down = Rc::new(RefCell::new(BTreeSet::new()));
+        let keys_pressed = Rc::new(RefCell::new(BTreeSet::new()));
 
         let keys_down_clone = keys_down.clone();
         let keys_pressed_clone = keys_pressed.clone();

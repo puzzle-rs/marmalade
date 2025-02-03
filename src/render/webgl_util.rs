@@ -60,28 +60,24 @@ pub fn link_program(
 pub fn buffer_f32_slice(webgl: &WebGl2RenderingContext, buffer: &WebGlBuffer, data: &[f32]) {
     webgl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buffer));
 
-    unsafe {
-        let positions_array_buf_view = js_sys::Float32Array::view(data);
+    let positions_array_buf_view = unsafe { js_sys::Float32Array::view(data) };
 
-        webgl.buffer_data_with_array_buffer_view(
-            WebGl2RenderingContext::ARRAY_BUFFER,
-            &positions_array_buf_view,
-            WebGl2RenderingContext::DYNAMIC_DRAW, // Flexible choice but possibly not the most optimal
-        );
-    }
+    webgl.buffer_data_with_array_buffer_view(
+        WebGl2RenderingContext::ARRAY_BUFFER,
+        &positions_array_buf_view,
+        WebGl2RenderingContext::DYNAMIC_DRAW, // Flexible choice but possibly not the most optimal
+    );
 }
 
 /// Safe wrapper around `js_sys` view
 pub fn buffer_u16_indexes(webgl: &WebGl2RenderingContext, buffer: &WebGlBuffer, data: &[u16]) {
     webgl.bind_buffer(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, Some(buffer));
 
-    unsafe {
-        let positions_array_buf_view = js_sys::Uint16Array::view(data);
+    let positions_array_buf_view = unsafe { js_sys::Uint16Array::view(data) };
 
-        webgl.buffer_data_with_array_buffer_view(
-            WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
-            &positions_array_buf_view,
-            WebGl2RenderingContext::DYNAMIC_DRAW, // Flexible choice but possibly not the most optimal
-        );
-    }
+    webgl.buffer_data_with_array_buffer_view(
+        WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
+        &positions_array_buf_view,
+        WebGl2RenderingContext::DYNAMIC_DRAW, // Flexible choice but possibly not the most optimal
+    );
 }
