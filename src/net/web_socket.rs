@@ -1,12 +1,11 @@
+use futures_channel::mpsc;
+use futures_util::StreamExt;
+use js_sys::{ArrayBuffer, JsString};
 use std::{
     cell::{Cell, RefCell},
     collections::VecDeque,
     rc::Rc,
 };
-
-use futures_channel::mpsc;
-use futures_util::StreamExt;
-use js_sys::{ArrayBuffer, JsString};
 use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::MessageEvent;
 

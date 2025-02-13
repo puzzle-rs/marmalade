@@ -11,7 +11,8 @@
     clippy::cast_precision_loss,
     clippy::cast_possible_wrap,
     clippy::many_single_char_names,
-    clippy::suboptimal_flops
+    clippy::suboptimal_flops,
+    clippy::too_many_lines
 )]
 
 pub mod audio;

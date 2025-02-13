@@ -3,7 +3,8 @@ use marmalade::dom_stack;
 use marmalade::draw_scheduler;
 use marmalade::font;
 use marmalade::image;
-use marmalade::input::{keyboard, Key};
+use marmalade::input;
+use marmalade::input::Key;
 use marmalade::render::canvas2d::Canvas2d;
 use marmalade::render::canvas2d::DrawTarget2d;
 use marmalade::render::color;
@@ -30,16 +31,16 @@ async fn async_main() {
     // Closure called for every frame
     draw_scheduler::set_on_draw(move || {
         // Move the sprite with keyboard
-        if keyboard::is_down(Key::A) {
+        if input::is_key_down(Key::A) {
             position.x -= 4.;
         }
-        if keyboard::is_down(Key::D) {
+        if input::is_key_down(Key::D) {
             position.x += 4.;
         }
-        if keyboard::is_down(Key::S) {
+        if input::is_key_down(Key::S) {
             position.y -= 4.;
         }
-        if keyboard::is_down(Key::W) {
+        if input::is_key_down(Key::W) {
             position.y += 4.;
         }
 

@@ -1,18 +1,17 @@
-use std::cell::Cell;
-use std::cell::RefCell;
-use std::time::Duration;
-
 use glam::Vec2;
 use marmalade::audio;
 use marmalade::dom::window;
 use marmalade::dom_stack;
 use marmalade::draw_scheduler;
 use marmalade::font;
-use marmalade::input::{keyboard, Key};
+use marmalade::input;
+use marmalade::input::Key;
 use marmalade::render::canvas2d::Canvas2d;
 use marmalade::render::canvas2d::DrawTarget2d;
 use marmalade::render::color;
 use marmalade::tick_scheduler::TickScheduler;
+use std::cell::RefCell;
+use std::time::Duration;
 
 const GRAVITY: Vec2 = Vec2::new(0., 0.0015);
 const COLLISION_SMOOTHNESS: f32 = 0.003;
@@ -102,7 +101,7 @@ async fn async_main() {
     let white_texture = canvas.white_texture();
 
     draw_scheduler::set_on_draw(move || {
-        if keyboard::is_pressed(Key::Space) {
+        if input::is_key_pressed(Key::Space) {
             let win = window();
 
             balls.push(RefCell::new(Ball::new(

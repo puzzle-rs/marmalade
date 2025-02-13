@@ -1,6 +1,5 @@
-use std::rc::Rc;
-
 use fontdue::Font;
+use std::rc::Rc;
 
 thread_local! {
     static MONOGRAM: Rc<Font> = Rc::new(from_bytes(include_bytes!("../resources/fonts/monogram-extended.ttf"), 16.));

@@ -1,11 +1,9 @@
+use crate::dom::window;
 use std::{
     cell::{OnceCell, RefCell},
     rc::Rc,
 };
-
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
-
-use crate::dom::window;
 
 struct DrawScheduler {
     draw_closure: Rc<RefCell<Box<dyn FnMut()>>>,

@@ -1,9 +1,7 @@
-use std::time::Duration;
-
-use futures_channel::oneshot;
-use wasm_bindgen::{prelude::Closure, JsCast};
-
 use crate::dom::window;
+use futures_channel::oneshot;
+use std::time::Duration;
+use wasm_bindgen::{prelude::Closure, JsCast};
 
 pub async fn sleep(duration: &Duration) {
     let (send, recv) = oneshot::channel();

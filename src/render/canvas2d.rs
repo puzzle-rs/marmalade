@@ -1,29 +1,26 @@
-use std::{cell::RefCell, f32::consts::TAU, rc::Rc};
-
+use super::webgl_util::{buffer_f32_slice, buffer_u16_indexes, compile_shader, link_program};
+use crate::dom::window;
 use fontdue::Font;
 use glam::{Mat3, UVec2, Vec2, Vec3, Vec4};
 use js_sys::Object;
+use std::{cell::RefCell, f32::consts::TAU};
 use wasm_bindgen::JsCast;
 use web_sys::{
     HtmlCanvasElement, ImageBitmap, OffscreenCanvas, WebGl2RenderingContext, WebGlBuffer,
     WebGlTexture, WebGlUniformLocation,
 };
 
-use crate::dom::window;
-
-use super::webgl_util::{buffer_f32_slice, buffer_u16_indexes, compile_shader, link_program};
-
 #[derive(Clone)]
 pub struct TextureRect {
-    pub webgl_texture: Rc<WebGlTexture>,
+    pub webgl_texture: WebGlTexture,
     pub position: Vec2,
     pub size: Vec2,
 }
 
 impl TextureRect {
-    fn new(texture: WebGlTexture) -> Self {
+    const fn new(texture: WebGlTexture) -> Self {
         Self {
-            webgl_texture: Rc::new(texture),
+            webgl_texture: texture,
             position: Vec2::ZERO,
             size: Vec2::ONE,
         }
@@ -38,7 +35,7 @@ pub trait DrawTarget2d {
         positions: &[f32],
         colors: &[f32],
         texcoords: &[f32],
-        texture: &Rc<WebGlTexture>,
+        texture: &WebGlTexture,
     );
 
     /// Draw a rectangle, color and texture are multiplied
@@ -155,7 +152,7 @@ pub struct ObjectBuilder2d {
     positions: Vec<f32>,
     colors: Vec<f32>,
     texcoords: Vec<f32>,
-    texture: Option<Rc<WebGlTexture>>,
+    texture: Option<WebGlTexture>,
 }
 
 /// Object builder is used to create buffers that can be reused efficiently without having to reupload everything to the GPU every time
@@ -180,7 +177,7 @@ impl DrawTarget2d for ObjectBuilder2d {
         positions: &[f32],
         colors: &[f32],
         texcoords: &[f32],
-        texture: &Rc<WebGlTexture>,
+        texture: &WebGlTexture,
     ) {
         assert_eq!(
             positions.len(),
@@ -196,7 +193,7 @@ impl DrawTarget2d for ObjectBuilder2d {
         assert!(
             self.texture
                 .as_ref()
-                .map_or(true, |tex| Rc::ptr_eq(tex, texture)),
+                .map_or(true, |tex| Object::is(tex, texture)),
             "All texture rect must share the same texture inside a given buffer"
         );
 
@@ -230,7 +227,7 @@ pub struct BufferedObject2d {
     position_buffer: WebGlBuffer,
     color_buffer: WebGlBuffer,
     texcoord_buffer: WebGlBuffer,
-    texture: Rc<WebGlTexture>,
+    texture: WebGlTexture,
 }
 
 /// An accelerated 2d drawing context backed by webgl2
@@ -681,7 +678,7 @@ impl DrawTarget2d for Canvas2d {
         positions: &[f32],
         colors: &[f32],
         texcoords: &[f32],
-        texture: &Rc<WebGlTexture>,
+        texture: &WebGlTexture,
     ) {
         // Flush when point count exceeds an u16 or when switching texture
         if self.direct_draw_builder.borrow().indexes.len() + indexes.len() > u16::MAX as usize
@@ -690,7 +687,7 @@ impl DrawTarget2d for Canvas2d {
                 .borrow()
                 .texture
                 .as_ref()
-                .is_some_and(|tex| !Rc::ptr_eq(texture, tex))
+                .is_some_and(|tex| !Object::is(texture, tex))
         {
             self.flush();
         }
