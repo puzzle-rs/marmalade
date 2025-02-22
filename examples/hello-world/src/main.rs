@@ -10,6 +10,7 @@ use marmalade::render::canvas2d::DrawTarget2d;
 use marmalade::render::color;
 
 async fn async_main() {
+    // Set the window title
     dom_stack::set_title("Hello World");
 
     // Create an HtmlCanvas where the game will be displayed
@@ -26,6 +27,10 @@ async fn async_main() {
     // Upload the image to the GPU
     let image_rect = canvas.create_texture(&image);
 
+    // Load the default font
+    let mut font = font::from_bytes(font::MONOGRAM);
+
+    // Player position
     let mut position = Vec2::new(300., 300.);
 
     // Closure called for every frame
@@ -60,9 +65,9 @@ async fn async_main() {
             Vec2::new(100., 100.),
             50.,
             "Move with W A S D",
-            font::monogram().as_ref(),
-            16.,
+            &mut font,
             color::rgb(1., 1., 1.),
+            &canvas.white_texture(),
         );
 
         // Make sure everything is drawn

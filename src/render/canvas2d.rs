@@ -1,13 +1,13 @@
 use super::webgl_util::{buffer_f32_slice, buffer_u16_indexes, compile_shader, link_program};
 use crate::dom::window;
-use fontdue::Font;
 use glam::{Mat3, UVec2, Vec2, Vec3, Vec4};
 use js_sys::Object;
+use meshtext::{Face, IndexedMeshText, MeshGenerator, TextSection};
 use std::{cell::RefCell, f32::consts::TAU};
 use wasm_bindgen::JsCast;
 use web_sys::{
     HtmlCanvasElement, ImageBitmap, OffscreenCanvas, WebGl2RenderingContext, WebGlBuffer,
-    WebGlTexture, WebGlUniformLocation,
+    WebGlContextAttributes, WebGlTexture, WebGlUniformLocation,
 };
 
 #[derive(Clone)]
@@ -143,6 +143,70 @@ pub trait DrawTarget2d {
             &texture.webgl_texture,
         );
     }
+
+    fn draw_text(
+        &mut self,
+        position: Vec2,
+        height: f32,
+        text: &str,
+        font: &mut MeshGenerator<Face<'_>>,
+        color: Vec4,
+        texture: &TextureRect,
+    ) {
+        let t_x = texture.position.x;
+        let t_y = texture.position.y;
+
+        let t_w = texture.size.x;
+        let t_h = texture.size.y;
+
+        let mesh: IndexedMeshText = font
+            .generate_section_2d(
+                text,
+                Some(&[
+                    height, 0., 0., // x
+                    0., height, 0., // y
+                    position.x, position.y, 0., // z
+                ]),
+            )
+            .unwrap();
+
+        let x_min = mesh.bbox.min.x;
+        let x_max = mesh.bbox.max.x;
+
+        let y_min = mesh.bbox.min.y;
+        let y_max = mesh.bbox.max.y;
+
+        let x_diff = x_max - x_min;
+        let y_diff = y_max - y_min;
+
+        let x_factor = t_w / x_diff;
+        let y_factor = t_h / y_diff;
+
+        let indices = mesh.indices.iter().map(|&i| i as u16).collect::<Vec<_>>();
+
+        let colors = (0..mesh.vertices.len() / 2)
+            .flat_map(|_| color.to_array())
+            .collect::<Vec<_>>();
+
+        let texcoords = mesh
+            .vertices
+            .chunks_exact(2)
+            .flat_map(|c| {
+                let x = c[0];
+                let y = c[1];
+
+                [(x - x_min) * x_factor + t_x, (y - y_min) * y_factor + t_y]
+            })
+            .collect::<Vec<_>>();
+
+        self.draw_raw(
+            &indices,
+            &mesh.vertices,
+            &colors,
+            &texcoords,
+            &texture.webgl_texture,
+        );
+    }
 }
 
 /// A utility struct for easily batching geometry together
@@ -193,7 +257,7 @@ impl DrawTarget2d for ObjectBuilder2d {
         assert!(
             self.texture
                 .as_ref()
-                .map_or(true, |tex| Object::is(tex, texture)),
+                .is_none_or(|tex| Object::is(tex, texture)),
             "All texture rect must share the same texture inside a given buffer"
         );
 
@@ -260,14 +324,12 @@ impl Canvas2d {
 
     #[must_use]
     fn internal_new(canvas: OffscreenCanvas) -> Self {
-        let options = Object::new();
-        js_sys::Reflect::set(&options, &"antialias".into(), &true.into())
-            .expect("Can't write webgl option");
-        js_sys::Reflect::set(&options, &"alpha".into(), &false.into())
-            .expect("Can't write webgl option");
+        let attrs = WebGlContextAttributes::new();
+        attrs.set_antialias(true);
+        attrs.set_alpha(false);
 
         let webgl = canvas
-            .get_context_with_context_options("webgl2", &options.into())
+            .get_context_with_context_options("webgl2", &attrs.into())
             .unwrap()
             .unwrap()
             .dyn_into::<WebGl2RenderingContext>()
@@ -453,7 +515,7 @@ impl Canvas2d {
         })
     }
 
-    /// Set the view matrix of this context, is is used to convert from world coordinates to opengl coordinates
+    /// Set the view matrix of this context, this is used to convert from world coordinates to opengl coordinates
     pub fn set_view_matrix(&mut self, view_matrix: Mat3) {
         self.flush();
         self.view_matrix = view_matrix;
@@ -554,87 +616,6 @@ impl Canvas2d {
             .expect("Can't upload image to gpu");
 
         TextureRect::new(webgl_texture)
-    }
-
-    pub fn draw_text(
-        &mut self,
-        position: Vec2,
-        height: f32,
-        text: &str,
-        font: &Font,
-        px: f32,
-        color: Vec4,
-    ) {
-        let mut px_pos = Vec2::ZERO;
-
-        let mut image_bytes = Vec::new();
-
-        for c in text.chars() {
-            let (metric, bytes) = font.rasterize(c, px);
-
-            if metric.height > 0 && metric.width > 0 {
-                image_bytes.clear();
-
-                for b in bytes {
-                    image_bytes.push(255);
-                    image_bytes.push(255);
-                    image_bytes.push(255);
-                    image_bytes.push(b);
-                }
-
-                let webgl_texture = self.gl.create_texture().expect("Can't create texture");
-                self.gl
-                    .bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&webgl_texture));
-
-                self.gl.tex_parameteri(
-                    WebGl2RenderingContext::TEXTURE_2D,
-                    WebGl2RenderingContext::TEXTURE_MIN_FILTER,
-                    WebGl2RenderingContext::LINEAR as i32,
-                );
-                self.gl.tex_parameteri(
-                    WebGl2RenderingContext::TEXTURE_2D,
-                    WebGl2RenderingContext::TEXTURE_MAG_FILTER,
-                    WebGl2RenderingContext::NEAREST as i32,
-                );
-                self.gl.tex_parameteri(
-                    WebGl2RenderingContext::TEXTURE_2D,
-                    WebGl2RenderingContext::TEXTURE_WRAP_S,
-                    WebGl2RenderingContext::CLAMP_TO_EDGE as i32,
-                );
-                self.gl.tex_parameteri(
-                    WebGl2RenderingContext::TEXTURE_2D,
-                    WebGl2RenderingContext::TEXTURE_WRAP_T,
-                    WebGl2RenderingContext::CLAMP_TO_EDGE as i32,
-                );
-
-                self.gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_u8_array_and_src_offset(
-                        WebGl2RenderingContext::TEXTURE_2D,
-                        0,
-                        WebGl2RenderingContext::RGBA as i32,
-                        metric.width as i32,
-                        metric.height as i32,
-                        0,
-                        WebGl2RenderingContext::RGBA,
-                        WebGl2RenderingContext::UNSIGNED_BYTE,
-                        &image_bytes,
-                        0,
-                    )
-                    .expect("Can't upload image to gpu");
-
-                let texture = TextureRect::new(webgl_texture);
-
-                self.draw_rect(
-                    position
-                        + (px_pos + Vec2::new(metric.xmin as f32, metric.ymin as f32)) * height
-                            / px,
-                    Vec2::new(metric.width as f32, metric.height as f32) * (height / px),
-                    color,
-                    &texture,
-                );
-            }
-
-            px_pos.x += metric.advance_width;
-        }
     }
 
     /// Clear canvas with the given color

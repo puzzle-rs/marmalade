@@ -85,6 +85,8 @@ impl Ball {
 async fn async_main() {
     let sound = audio::from_bytes(include_bytes!("resources/bounce.flac")).await;
 
+    let mut font = font::from_bytes(font::MONOGRAM);
+
     dom_stack::set_title("Bouncing Balls");
 
     let mut balls = Vec::new();
@@ -161,9 +163,9 @@ async fn async_main() {
                 Vec2::new(50., 100.),
                 64.,
                 "Press SPACE to throw a ball",
-                font::monogram().as_ref(),
-                16.,
+                &mut font,
                 color::rgb(1., 1., 1.),
+                &canvas.white_texture(),
             );
         }
     });
