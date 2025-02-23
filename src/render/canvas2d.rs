@@ -2,7 +2,7 @@ use super::webgl_util::{buffer_f32_slice, buffer_u16_indexes, compile_shader, li
 use crate::dom::window;
 use glam::{Mat3, UVec2, Vec2, Vec3, Vec4};
 use js_sys::Object;
-use meshtext::{Face, IndexedMeshText, MeshGenerator, TextSection};
+use meshtext::{Face, MeshGenerator, MeshText, TextSection};
 use std::{cell::RefCell, f32::consts::TAU};
 use wasm_bindgen::JsCast;
 use web_sys::{
@@ -159,7 +159,7 @@ pub trait DrawTarget2d {
         let t_w = texture.size.x;
         let t_h = texture.size.y;
 
-        let mesh: IndexedMeshText = font
+        let mesh: MeshText = font
             .generate_section_2d(
                 text,
                 Some(&[
@@ -168,7 +168,7 @@ pub trait DrawTarget2d {
                     position.x, position.y, 0., // z
                 ]),
             )
-            .unwrap();
+            .unwrap(); // Ideally would use MeshTextIndexed, but it has errors with some characters
 
         let x_min = mesh.bbox.min.x;
         let x_max = mesh.bbox.max.x;
@@ -180,9 +180,10 @@ pub trait DrawTarget2d {
         let y_diff = y_max - y_min;
 
         let x_factor = t_w / x_diff;
-        let y_factor = t_h / y_diff;
 
-        let indices = mesh.indices.iter().map(|&i| i as u16).collect::<Vec<_>>();
+        let indices = (0..mesh.vertices.len() / 2)
+            .map(|i| i as u16)
+            .collect::<Vec<_>>();
 
         let colors = (0..mesh.vertices.len() / 2)
             .flat_map(|_| color.to_array())
@@ -195,7 +196,10 @@ pub trait DrawTarget2d {
                 let x = c[0];
                 let y = c[1];
 
-                [(x - x_min) * x_factor + t_x, (y - y_min) * y_factor + t_y]
+                [
+                    (x - x_min) * x_factor + t_x,
+                    t_h * (1. - (y - y_min) / y_diff) + t_y,
+                ]
             })
             .collect::<Vec<_>>();
 
